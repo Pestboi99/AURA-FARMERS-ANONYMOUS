@@ -1,0 +1,228 @@
+{% extends "base.html" %}
+
+{% block title %}Emotional Support Reset — AURA FARMERS ANONYMOUS{% endblock %}
+
+{% block content %}
+<main class="main-container">
+    <!-- Page Header -->
+    <h1 class="page-title glitch-text">💝 EMOTIONAL SUPPORT STREAK</h1>
+    <p class="page-subtitle">To reset your password, you must send 3 genuine compliments to The Bouncer.</p>
+
+    <!-- STEP 1: Enter Username -->
+    {% if step == 'username' %}
+    <div class="card card-glow">
+        <form method="POST" action="{{ url_for('reset') }}">
+            <div class="form-group">
+                <label class="form-label" for="reset-username">Enter Your Username</label>
+                <input 
+                    type="text" 
+                    id="reset-username" 
+                    name="username" 
+                    class="form-input" 
+                    placeholder="Enter your disgraced username..." 
+                    required 
+                    autocomplete="username"
+                >
+            </div>
+            <button type="submit" class="btn btn-primary btn-full">Begin the Healing ❤️</button>
+        </form>
+    </div>
+
+    <!-- STEP 2: Send Compliments -->
+    {% elif step == 'compliment' %}
+    <div class="card card-glow">
+        <div style="text-align: center; margin-bottom: 1.2rem;">
+            <span class="sticker sticker-pink">Complimenting as: {{ username }}</span>
+            <div class="compliment-progress">
+                {% for i in range(3) %}
+                    <span class="compliment-heart {% if i < (accepted or 0) %}filled{% endif %}" title="Compliment {{ i + 1 }}">❤️</span>
+                {% endfor %}
+            </div>
+            <p style="font-size: 0.9rem; color: var(--electric-cyan);">
+                Accepted Compliments: <strong>{{ accepted or 0 }} / 3</strong>
+            </p>
+        </div>
+
+        <form method="POST" action="{{ url_for('reset_compliment') }}">
+            <div class="form-group">
+                <label class="form-label" for="bouncer-compliment">Your Heartfelt Compliment</label>
+                <textarea 
+                    name="compliment" 
+                    id="bouncer-compliment" 
+                    class="form-textarea" 
+                    placeholder="Tell The Bouncer how sharp his jawline looks today, how radiant his aura is, or praise his immaculate security skills..." 
+                    required
+                ></textarea>
+
+                <!-- Quick Emoji Picker for Compliments -->
+                <div class="emoji-picker-container" style="margin-top: 0.4rem;">
+                    <span style="font-size: 0.75rem; color: var(--electric-cyan); font-family: var(--font-heading); display: block; margin-bottom: 0.2rem;">TAP TO ADD VIBES:</span>
+                    <div class="emoji-picker-bar" data-target="bouncer-compliment">
+                        <button type="button" class="emoji-btn no-tung" data-emoji="💖" title="Heart">💖</button>
+                        <button type="button" class="emoji-btn no-tung" data-emoji="👑" title="Crown">👑</button>
+                        <button type="button" class="emoji-btn no-tung" data-emoji="🗿" title="Moai">🗿</button>
+                        <button type="button" class="emoji-btn no-tung" data-emoji="✨" title="Sparkles">✨</button>
+                        <button type="button" class="emoji-btn no-tung" data-emoji="🐐" title="GOAT">🐐</button>
+                        <button type="button" class="emoji-btn no-tung" data-emoji="🔥" title="Fire">🔥</button>
+                        <button type="button" class="emoji-btn no-tung" data-emoji="💅" title="Slay">💅</button>
+                        <button type="button" class="emoji-btn no-tung" data-emoji="🥺" title="Pleading">🥺</button>
+                    </div>
+                </div>
+            </div>
+            
+            <p style="font-size: 0.85rem; color: var(--acid-yellow); margin-bottom: 1rem; font-style: italic;">
+                ⚠️ Tips: The Bouncer rejects generic compliments. Be specific and creative!
+            </p>
+
+            <button type="submit" class="btn btn-primary btn-full">Send Compliment 💌</button>
+        </form>
+    </div>
+
+    <!-- STEP 3: Enter New Password -->
+    {% elif step == 'new_password' %}
+    <div class="card card-glow">
+        <div style="text-align: center; margin-bottom: 1.5rem;">
+            <div class="compliment-progress">
+                <span class="compliment-heart filled">❤️</span>
+                <span class="compliment-heart filled">❤️</span>
+                <span class="compliment-heart filled">❤️</span>
+            </div>
+            <span class="sticker sticker-lime">SOUL TOUCHED</span>
+            <p style="color: var(--success); font-weight: 700; margin-top: 0.8rem; font-size: 1.1rem;">
+                The Bouncer has been emotionally moved.
+            </p>
+            <p style="color: var(--text-secondary); font-size: 0.9rem;">
+                You have proven your emotional rizz. You may now craft a new sigma password.
+            </p>
+        </div>
+
+        <form method="POST" action="{{ url_for('reset_password') }}">
+            <div class="form-group">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.3rem;">
+                    <label class="form-label" for="password-input" style="margin-bottom: 0;">New Sigma Password</label>
+                    <button type="button" class="password-toggle-btn no-tung" data-target="password-input" style="padding: 0.2rem 0.6rem; font-size: 0.8rem;" title="Toggle Password Visibility">👁️ Show</button>
+                </div>
+                <input 
+                    type="password" 
+                    id="password-input" 
+                    name="new_password" 
+                    class="form-input" 
+                    placeholder="e.g. 🍎Sigma7prime!" 
+                    required 
+                    autocomplete="new-password"
+                >
+
+                <!-- Quick Emoji & Fruit Picker -->
+                <div class="emoji-picker-container">
+                    <span style="font-size: 0.75rem; color: var(--acid-yellow); font-family: var(--font-heading); display: block; margin-bottom: 0.3rem;">👇 CLICK TO INSERT EMOJI / FRUIT:</span>
+                    <div class="emoji-picker-bar" data-target="password-input">
+                        <button type="button" class="emoji-btn no-tung" data-emoji="🍎" title="Apple (Fruit + Emoji)">🍎</button>
+                        <button type="button" class="emoji-btn no-tung" data-emoji="🍌" title="Banana (Fruit + Emoji)">🍌</button>
+                        <button type="button" class="emoji-btn no-tung" data-emoji="🍒" title="Cherry (Fruit + Emoji)">🍒</button>
+                        <button type="button" class="emoji-btn no-tung" data-emoji="🍇" title="Grape (Fruit + Emoji)">🍇</button>
+                        <button type="button" class="emoji-btn no-tung" data-emoji="🍉" title="Watermelon (Fruit + Emoji)">🍉</button>
+                        <button type="button" class="emoji-btn no-tung" data-emoji="🎭" title="Drama Mask (Emoji)">🎭</button>
+                        <button type="button" class="emoji-btn no-tung" data-emoji="💀" title="Skull (Emoji)">💀</button>
+                        <button type="button" class="emoji-btn no-tung" data-emoji="🔥" title="Fire (Emoji)">🔥</button>
+                        <button type="button" class="emoji-btn no-tung" data-emoji="🗿" title="Mewing Moai (Emoji)">🗿</button>
+                        <button type="button" class="emoji-btn no-tung" data-emoji="👑" title="Crown (Emoji)">👑</button>
+                        <button type="button" class="emoji-btn no-tung" data-emoji="✨" title="Sparkles (Emoji)">✨</button>
+                        <button type="button" class="emoji-btn no-tung" data-emoji="🚽" title="Skibidi Toilet (Emoji)">🚽</button>
+                        <button type="button" class="emoji-btn no-tung" data-emoji="😈" title="Sigma Demon (Emoji)">😈</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Password Requirements Checklist -->
+            <div class="form-group">
+                <label class="form-label">Password Requirements (Still Mandatory)</label>
+                <ul class="password-checklist" id="password-checklist">
+                    <li data-check="min_length" class="{% if checks %}{{ 'check-pass' if checks.min_length else 'check-fail' }}{% else %}check-fail{% endif %}">
+                        <span class="check-icon">{% if checks and checks.min_length %}✅{% else %}❌{% endif %}</span>
+                        <span>At least 8 characters</span>
+                    </li>
+                    <li data-check="has_prime" class="{% if checks %}{{ 'check-pass' if checks.has_prime else 'check-fail' }}{% else %}check-fail{% endif %}">
+                        <span class="check-icon">{% if checks and checks.has_prime %}✅{% else %}❌{% endif %}</span>
+                        <span>Contains a prime number (2,3,5,7,11...)</span>
+                    </li>
+                    <li data-check="has_emoji" class="{% if checks %}{{ 'check-pass' if checks.has_emoji else 'check-fail' }}{% else %}check-fail{% endif %}">
+                        <span class="check-icon">{% if checks and checks.has_emoji %}✅{% else %}❌{% endif %}</span>
+                        <span>Contains an emoji 🎭</span>
+                    </li>
+                    <li data-check="has_fruit" class="{% if checks %}{{ 'check-pass' if checks.has_fruit else 'check-fail' }}{% else %}check-fail{% endif %}">
+                        <span class="check-icon">{% if checks and checks.has_fruit %}✅{% else %}❌{% endif %}</span>
+                        <span>Contains a fruit name (apple, banana, etc.)</span>
+                    </li>
+                    <li data-check="has_sigma" class="{% if checks %}{{ 'check-pass' if checks.has_sigma else 'check-fail' }}{% else %}check-fail{% endif %}">
+                        <span class="check-icon">{% if checks and checks.has_sigma %}✅{% else %}❌{% endif %}</span>
+                        <span>Contains the word "sigma"</span>
+                    </li>
+                </ul>
+            </div>
+
+            <button type="submit" class="btn btn-primary btn-full">Reset Password 🔑</button>
+        </form>
+    </div>
+    {% endif %}
+
+    <!-- Return to Login Link -->
+    <div class="nav-links" style="margin-top: 1.5rem;">
+        <a href="{{ url_for('login') }}">← Back to Login</a>
+    </div>
+</main>
+{% endblock %}
+
+{% block scripts %}
+{% if step == 'new_password' %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const passwordInput = document.getElementById('password-input');
+        const checklist = document.getElementById('password-checklist');
+        let debounceTimer = null;
+
+        function updateChecklist(checks) {
+            if (!checks || !checklist) return;
+            for (const [rule, passed] of Object.entries(checks)) {
+                const item = checklist.querySelector(`[data-check="${rule}"]`);
+                if (item) {
+                    if (passed) {
+                        item.classList.remove('check-fail');
+                        item.classList.add('check-pass');
+                    } else {
+                        item.classList.remove('check-pass');
+                        item.classList.add('check-fail');
+                    }
+                    const icon = item.querySelector('.check-icon');
+                    if (icon) {
+                        icon.textContent = passed ? '✅' : '❌';
+                    }
+                }
+            }
+        }
+
+        if (passwordInput) {
+            passwordInput.addEventListener('input', function() {
+                clearTimeout(debounceTimer);
+                const passwordVal = this.value;
+                debounceTimer = setTimeout(function() {
+                    fetch('{{ url_for("validate_password_api") }}', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({ password: passwordVal })
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        updateChecklist(data);
+                    })
+                    .catch(err => {
+                        console.error('Password validation fetch failed:', err);
+                    });
+                }, 300);
+            });
+        }
+    });
+</script>
+{% endif %}
+{% endblock %}

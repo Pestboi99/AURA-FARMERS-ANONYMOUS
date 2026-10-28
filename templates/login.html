@@ -1,0 +1,141 @@
+{% extends "base.html" %}
+
+{% block title %}Login — AURA FARMERS ANONYMOUS{% endblock %}
+
+{% block content %}
+<main class="main-container">
+    <!-- Sticker Badges -->
+    <div style="margin-bottom: 0.5rem; text-align: center;">
+        <span class="sticker sticker-yellow">100% NO CAP</span>
+        <span class="sticker sticker-lime">CERTIFIED SIGMA</span>
+        <span class="sticker sticker-purple">ENTER IF YOU DARE</span>
+    </div>
+
+    <!-- Page Title & Subtitle -->
+    <h1 class="page-title glitch-text">🔐 AURA FARMERS ANONYMOUS</h1>
+    <p class="page-subtitle">"Log in. Lose your dignity."</p>
+
+    <!-- Login Card -->
+    <div class="card card-glow">
+        <form method="POST" action="{{ url_for('login') }}">
+            <!-- Username Input -->
+            <div class="form-group">
+                <label class="form-label" for="login-username">Username</label>
+                <input 
+                    type="text" 
+                    id="login-username" 
+                    name="username" 
+                    class="form-input" 
+                    placeholder="Enter your sigma username" 
+                    required 
+                    autocomplete="username"
+                >
+            </div>
+
+            <!-- Password Input -->
+            <div class="form-group">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.3rem;">
+                    <label class="form-label" for="login-password" style="margin-bottom: 0;">Password</label>
+                    <button type="button" class="password-toggle-btn no-tung" data-target="login-password" style="padding: 0.2rem 0.6rem; font-size: 0.8rem;" title="Toggle Password Visibility">👁️ Show</button>
+                </div>
+                <input 
+                    type="password" 
+                    id="login-password" 
+                    name="password" 
+                    class="form-input" 
+                    placeholder="Enter your password" 
+                    required 
+                    autocomplete="current-password"
+                >
+            </div>
+
+            <!-- Submit Button -->
+            <button type="submit" class="btn btn-primary btn-full">ATTEMPT LOGIN 💀</button>
+        </form>
+
+        <!-- Runaway Button for Forgot Password -->
+        <div style="margin-top: 1.2rem; text-align: center; min-height: 40px;">
+            <a href="{{ url_for('reset') }}" class="runaway-btn btn btn-warning btn-small" id="forgot-btn">Forgot Password? 🏃</a>
+        </div>
+    </div>
+
+    <!-- Navigation Links -->
+    <div class="nav-links">
+        <a href="{{ url_for('register') }}">No account? Create one (it's not easier) →</a>
+        <a href="{{ url_for('leaderboard') }}">🏆 Hall of Shame</a>
+    </div>
+</main>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const forgotBtn = document.getElementById('forgot-btn');
+        if (!forgotBtn) return;
+
+        let runawayActive = true;
+        let dodgeCount = 0;
+        const maxDodges = 10;
+
+        const taunts = [
+            'Too slow! 🏃💨',
+            'Nice try, NPC! 😂',
+            'Catch me if you can! 💅',
+            'Aura too low! 📉',
+            'Error 404: Click not found 💀',
+            'Mewing away! 🗿',
+            'Almost had it! 😜',
+            'Try harder, bestie! ✨',
+            'Skibidi dodge! 🏃'
+        ];
+
+        const offsets = [
+            { x: 120, y: -35 },
+            { x: -120, y: -35 },
+            { x: 130, y: 25 },
+            { x: -130, y: 25 },
+            { x: 0, y: -50 },
+            { x: 70, y: 35 },
+            { x: -70, y: 35 },
+            { x: 110, y: -20 },
+            { x: -110, y: -20 }
+        ];
+
+        function dodge(e) {
+            if (!runawayActive) return;
+            dodgeCount++;
+
+            if (dodgeCount >= maxDodges) {
+                runawayActive = false;
+                forgotBtn.style.transition = 'all 0.3s ease';
+                forgotBtn.style.transform = 'translate(0, 0)';
+                forgotBtn.textContent = 'Fine, you can reset your password 😤';
+                forgotBtn.classList.remove('btn-warning');
+                forgotBtn.classList.add('btn-success');
+                return;
+            }
+
+            const pick = offsets[dodgeCount % offsets.length];
+            const jitterX = Math.floor(Math.random() * 20) - 10;
+            const jitterY = Math.floor(Math.random() * 14) - 7;
+            const finalX = pick.x + jitterX;
+            const finalY = pick.y + jitterY;
+
+            forgotBtn.style.transition = 'transform 0.18s cubic-bezier(0.34, 1.56, 0.64, 1)';
+            forgotBtn.style.transform = `translate(${finalX}px, ${finalY}px)`;
+            forgotBtn.textContent = taunts[dodgeCount % taunts.length];
+        }
+
+        forgotBtn.addEventListener('mouseenter', dodge);
+
+        // On mobile: shrink on tap and dodge
+        forgotBtn.addEventListener('touchstart', function(e) {
+            if (!runawayActive) return;
+            this.style.transform = 'scale(0.7)';
+            setTimeout(() => {
+                dodge(e);
+            }, 150);
+        });
+    });
+</script>
+{% endblock %}

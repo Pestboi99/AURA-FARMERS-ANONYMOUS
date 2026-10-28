@@ -1,0 +1,262 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard — AURA FARMERS ANONYMOUS{% endblock %}
+
+{% block content %}
+<main class="main-container wide-container">
+    <!-- Page Title -->
+    <h1 class="page-title glitch-text">🏠 WELCOME BACK, {{ user.username | upper }}</h1>
+    <div style="text-align: center; margin-bottom: 1.5rem;">
+        <span class="mood-indicator mood-{{ user.bouncer_mood }}">Bouncer Mood: {{ user.bouncer_mood }}</span>
+    </div>
+
+    <!-- Aura Meter Card -->
+    <div class="card card-glow" style="text-align: center;">
+        <div class="rank-title">{{ user.rank_title }}</div>
+        <div class="aura-value">{{ user.aura_points }} AURA</div>
+        
+        {% set aura_pct = [100, [5, (((user.aura_points + 100) / 5) | round | int)] | max] | min %}
+        <div class="aura-meter">
+            <div class="aura-bar-bg">
+                <div class="aura-bar-fill" style="width: {{ aura_pct }}%;"></div>
+            </div>
+            <div class="aura-labels">
+                <span>-100 (Ohio Resident)</span>
+                <span>100 (Baseline NPC)</span>
+                <span>400+ (Ohio Final Boss)</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Password Expiry Joke Banner -->
+    <div class="expiry-timer">
+        Your password expires in: <span class="expiry-time" id="expiry-timer">59</span>s
+    </div>
+
+    <!-- Dashboard Stat Grid -->
+    <div class="dashboard-grid">
+        <div class="stat-card">
+            <div class="stat-value">{{ user.login_attempts }}</div>
+            <div class="stat-label">Login Attempts</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-value">{{ user.failed_attempts }}</div>
+            <div class="stat-label">Failed Attempts</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-value" style="font-size: 1.4rem;">{{ user.rank_title }}</div>
+            <div class="stat-label">Rank Title</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-value">
+                <span class="mood-indicator mood-{{ user.bouncer_mood }}">{{ user.bouncer_mood }}</span>
+            </div>
+            <div class="stat-label">Bouncer Mood</div>
+        </div>
+    </div>
+
+    <!-- Two-column Grid for History and Achievements -->
+    <div class="dashboard-grid" style="margin-top: 1.5rem;">
+        <!-- Attempt History -->
+        <div class="card">
+            <h3 style="color: var(--electric-cyan); margin-bottom: 1rem; font-family: var(--font-heading); font-size: 1.3rem;">
+                📜 RECENT ATTEMPTS
+            </h3>
+            {% if attempts %}
+            <ul class="history-list">
+                {% for attempt in attempts %}
+                <li class="history-item">
+                    <div>
+                        <strong style="color: var(--text-primary); text-transform: capitalize;">
+                            {{ attempt.challenge_type | replace('_', ' ') }}
+                        </strong>
+                        <div style="font-size: 0.8rem; color: var(--text-secondary); font-style: italic; margin-top: 0.2rem;">
+                            "{{ attempt.ai_response }}"
+                        </div>
+                    </div>
+                    <div style="text-align: right; min-width: 90px; margin-left: 0.5rem;">
+                        <div>{% if attempt.passed %}✅ PASSED{% else %}❌ FAILED{% endif %}</div>
+                        <div class="aura-change {% if attempt.aura_change >= 0 %}aura-positive{% else %}aura-negative{% endif %}" style="font-size: 0.95rem;">
+                            {{ '+' if attempt.aura_change > 0 else '' }}{{ attempt.aura_change }}
+                        </div>
+                    </div>
+                </li>
+                {% endfor %}
+            </ul>
+            {% else %}
+            <div class="empty-state">
+                <div class="empty-emoji">📜</div>
+                <p>No attempts recorded yet.</p>
+                <p style="font-size: 0.85rem;">You haven't faced the bouncer trials!</p>
+            </div>
+            {% endif %}
+        </div>
+
+        <!-- Achievements -->
+        <div class="card">
+            <h3 style="color: var(--acid-yellow); margin-bottom: 1rem; font-family: var(--font-heading); font-size: 1.3rem;">
+                🎖️ ACHIEVEMENTS
+            </h3>
+            {% if achievements %}
+            <div style="display: flex; flex-direction: column; gap: 0.7rem; max-height: 300px; overflow-y: auto;">
+                {% for ach in achievements %}
+                <div style="display: flex; align-items: center; gap: 0.8rem; padding: 0.7rem 0.9rem; background: rgba(255, 255, 255, 0.05); border: 2px solid var(--card-border); border-radius: 10px;">
+                    <span style="font-size: 1.6rem;">🏆</span>
+                    <div>
+                        <strong style="color: var(--acid-yellow); font-family: var(--font-heading); font-size: 1rem; display: block;">
+                            {{ ach.achievement_name if ach.achievement_name is defined else ach }}
+                        </strong>
+                        {% if ach.achieved_at is defined %}
+                        <span style="font-size: 0.75rem; color: var(--text-secondary);">Unlocked {{ ach.achieved_at }}</span>
+                        {% endif %}
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            {% else %}
+            <div class="empty-state">
+                <div class="empty-emoji">🗿</div>
+                <p>No achievements unlocked yet.</p>
+                <p style="font-size: 0.85rem;">Survive trials or fail spectacularly to unlock badges.</p>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Navigation & Logout Buttons -->
+    <div class="nav-links" style="margin-top: 2rem;">
+        <a href="{{ url_for('leaderboard') }}" class="btn btn-secondary btn-small">🏆 View Leaderboard</a>
+        <button type="button" class="btn btn-danger btn-small" id="initiate-logout-btn">Log Out 🚪</button>
+    </div>
+
+    <!-- Hidden Form for Actual Logout -->
+    <form id="actual-logout-form" method="POST" action="{{ url_for('logout') }}" style="display: none;"></form>
+</main>
+
+<!-- Panic Password Expiry Modal -->
+<div class="modal-overlay" id="expiry-panic-modal">
+    <div class="modal-content">
+        <h3 class="modal-title">🚨 PASSWORD EXPIRED 🚨</h3>
+        <p class="modal-text" style="font-size: 1.1rem; color: var(--acid-yellow);">
+            JK LOL 😂 Your password is fine. We just wanted to see you panic.
+        </p>
+        <div class="modal-buttons">
+            <button type="button" class="btn btn-primary btn-small" id="close-panic-modal-btn">
+                Phew, you got me 😭
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- Triple Confirmation Logout Modal Chain -->
+<div class="modal-overlay" id="logout-modal-overlay">
+    <!-- Confirmation Step 1 -->
+    <div class="modal-content" id="logout-step-1">
+        <h3 class="modal-title">Are you sure?</h3>
+        <p class="modal-text">Do you really want to log out and forfeit your current session vibe?</p>
+        <div class="modal-buttons">
+            <button type="button" class="btn btn-secondary btn-small close-logout-modal">Keep Grinding</button>
+            <button type="button" class="btn btn-danger btn-small" id="to-logout-step-2">Yes, I'm Sure</button>
+        </div>
+    </div>
+
+    <!-- Confirmation Step 2 -->
+    <div class="modal-content" id="logout-step-2" style="display: none;">
+        <h3 class="modal-title">Are you REALLY sure?</h3>
+        <p class="modal-text">The Bouncer might judge you harshly while you're offline. Ohio is calling your name!</p>
+        <div class="modal-buttons">
+            <button type="button" class="btn btn-secondary btn-small close-logout-modal">Never mind</button>
+            <button type="button" class="btn btn-danger btn-small" id="to-logout-step-3">I Said YES</button>
+        </div>
+    </div>
+
+    <!-- Confirmation Step 3 -->
+    <div class="modal-content" id="logout-step-3" style="display: none;">
+        <h3 class="modal-title">Are you sure you're sure you're really sure?</h3>
+        <p class="modal-text">Final warning: Logging out will permanently archive your sigma reputation for today.</p>
+        <div class="modal-buttons">
+            <button type="button" class="btn btn-secondary btn-small close-logout-modal">Stay Sigma</button>
+            <button type="button" class="btn btn-danger btn-small" id="confirm-final-logout">YES, LOG ME OUT 💀</button>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Password Expiry Joke Countdown
+        let secondsLeft = 59;
+        const timerDisplay = document.getElementById('expiry-timer');
+        const panicModal = document.getElementById('expiry-panic-modal');
+        const closePanicBtn = document.getElementById('close-panic-modal-btn');
+
+        const expiryInterval = setInterval(function() {
+            secondsLeft--;
+            if (timerDisplay) timerDisplay.textContent = secondsLeft;
+
+            if (secondsLeft <= 0) {
+                if (panicModal) panicModal.classList.add('active');
+                secondsLeft = 59; // Reset to 59
+                if (timerDisplay) timerDisplay.textContent = secondsLeft;
+            }
+        }, 1000);
+
+        if (closePanicBtn && panicModal) {
+            closePanicBtn.addEventListener('click', function() {
+                panicModal.classList.remove('active');
+            });
+        }
+
+        // Triple Confirmation Logout Modal Chain
+        const logoutOverlay = document.getElementById('logout-modal-overlay');
+        const initiateBtn = document.getElementById('initiate-logout-btn');
+        const step1 = document.getElementById('logout-step-1');
+        const step2 = document.getElementById('logout-step-2');
+        const step3 = document.getElementById('logout-step-3');
+        const toStep2 = document.getElementById('to-logout-step-2');
+        const toStep3 = document.getElementById('to-logout-step-3');
+        const finalLogout = document.getElementById('confirm-final-logout');
+        const cancelButtons = document.querySelectorAll('.close-logout-modal');
+        const actualForm = document.getElementById('actual-logout-form');
+
+        function resetLogoutModal() {
+            if (logoutOverlay) logoutOverlay.classList.remove('active');
+            if (step1) step1.style.display = 'block';
+            if (step2) step2.style.display = 'none';
+            if (step3) step3.style.display = 'none';
+        }
+
+        if (initiateBtn) {
+            initiateBtn.addEventListener('click', function() {
+                resetLogoutModal();
+                if (logoutOverlay) logoutOverlay.classList.add('active');
+            });
+        }
+
+        if (toStep2) {
+            toStep2.addEventListener('click', function() {
+                if (step1) step1.style.display = 'none';
+                if (step2) step2.style.display = 'block';
+            });
+        }
+
+        if (toStep3) {
+            toStep3.addEventListener('click', function() {
+                if (step2) step2.style.display = 'none';
+                if (step3) step3.style.display = 'block';
+            });
+        }
+
+        if (finalLogout && actualForm) {
+            finalLogout.addEventListener('click', function() {
+                actualForm.submit();
+            });
+        }
+
+        cancelButtons.forEach(btn => {
+            btn.addEventListener('click', resetLogoutModal);
+        });
+    });
+</script>
+{% endblock %}

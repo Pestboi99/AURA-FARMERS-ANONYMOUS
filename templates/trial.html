@@ -1,0 +1,328 @@
+{% extends "base.html" %}
+
+{% block title %}The Brainrot Trial — AURA FARMERS ANONYMOUS{% endblock %}
+
+{% block content %}
+<main class="main-container">
+    <!-- User Aura Display at Top -->
+    {% if user %}
+    <div style="display: flex; gap: 0.5rem; justify-content: center; align-items: center; margin-bottom: 1rem; flex-wrap: wrap;">
+        <span class="sticker sticker-cyan">⚡ AURA: {{ user.aura_points }}</span>
+        <span class="sticker sticker-yellow">RANK: {{ user.rank_title }}</span>
+    </div>
+    {% endif %}
+
+    <!-- Progress Dots -->
+    <div class="progress-dots" title="Trial Progress">
+        {% for i in range(total) %}
+            <div class="progress-dot {% if i < index %}passed{% elif i == index %}active{% endif %}"></div>
+        {% endfor %}
+    </div>
+
+    <!-- Result Card (shown if last_result exists) -->
+    {% if last_result %}
+    <div class="result-card {% if last_result.verdict == 'pass' %}result-pass{% else %}result-fail{% endif %}" id="result-card">
+        <div class="result-verdict">
+            {% if last_result.verdict == 'pass' %}✅ PASSED{% else %}❌ FAILED{% endif %}
+        </div>
+        <p class="result-message">"{{ last_result.message }}"</p>
+        <div class="aura-change {% if last_result.aura_change >= 0 %}aura-positive{% else %}aura-negative{% endif %}">
+            {{ '+' if last_result.aura_change > 0 else '' }}{{ last_result.aura_change }} AURA
+        </div>
+        <div style="margin-top: 1.2rem;">
+            <button type="button" class="btn btn-secondary btn-small" id="continue-trial-btn">
+                Continue to next challenge →
+            </button>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Challenge Card -->
+    <div class="card card-glow" id="challenge-card" {% if last_result %}style="display: none;"{% endif %}>
+        <div class="challenge-header">
+            <div style="margin-bottom: 0.6rem;">
+                <span class="mood-indicator mood-{{ mood }}">Bouncer Mood: {{ mood }}</span>
+            </div>
+            <h2 class="challenge-title">{{ challenge.title }}</h2>
+            <p class="challenge-instruction">{{ challenge.instruction }}</p>
+            {% if challenge.hint %}
+                <p style="font-size: 0.85rem; color: var(--electric-cyan); margin-top: 0.4rem; font-style: italic;">
+                    💡 Hint: {{ challenge.hint }}
+                </p>
+            {% endif %}
+        </div>
+
+        <form id="trial-form" method="POST" action="{{ url_for('trial') }}">
+            <!-- 1. Textarea Challenge (Meme Explainer) -->
+            {% if challenge.input_type == 'textarea' %}
+                <input type="hidden" name="challenge_context" value="{{ challenge.meme_name }}">
+                <div class="form-group">
+                    <label class="form-label" for="trial-textarea">Your Explanation to the Bouncer</label>
+                    <textarea 
+                        name="answer" 
+                        id="trial-textarea" 
+                        class="form-textarea" 
+                        placeholder="Explain with utmost rizz and conviction..." 
+                        required
+                    ></textarea>
+
+                    <!-- Quick Meme Emoji Bar -->
+                    <div class="emoji-picker-container" style="margin-top: 0.4rem;">
+                        <span style="font-size: 0.75rem; color: var(--electric-cyan); font-family: var(--font-heading); display: block; margin-bottom: 0.2rem;">TAP TO ADD BRAINROT EMOJIS:</span>
+                        <div class="emoji-picker-bar" data-target="trial-textarea">
+                            <button type="button" class="emoji-btn no-tung" data-emoji="💀" title="Skull">💀</button>
+                            <button type="button" class="emoji-btn no-tung" data-emoji="🔥" title="Fire">🔥</button>
+                            <button type="button" class="emoji-btn no-tung" data-emoji="🚽" title="Skibidi Toilet">🚽</button>
+                            <button type="button" class="emoji-btn no-tung" data-emoji="🗿" title="Moai">🗿</button>
+                            <button type="button" class="emoji-btn no-tung" data-emoji="🧠" title="Brain">🧠</button>
+                            <button type="button" class="emoji-btn no-tung" data-emoji="💅" title="Slay">💅</button>
+                            <button type="button" class="emoji-btn no-tung" data-emoji="🐐" title="GOAT">🐐</button>
+                            <button type="button" class="emoji-btn no-tung" data-emoji="✨" title="Sparkles">✨</button>
+                            <button type="button" class="emoji-btn no-tung" data-emoji="🤡" title="Clown">🤡</button>
+                            <button type="button" class="emoji-btn no-tung" data-emoji="🗣️" title="Speaking">🗣️</button>
+                        </div>
+                    </div>
+                </div>
+
+            <!-- 2. Sigma Timer Challenge -->
+            {% elif challenge.input_type == 'timer' %}
+                <input type="hidden" name="expected_phrase" value="{{ challenge.phrase }}">
+                <input type="hidden" name="challenge_context" value="{{ challenge.phrase }}">
+                <input type="hidden" name="timed_out" id="timer-timed-out" value="false">
+
+                <div class="phrase-display">{{ challenge.phrase }}</div>
+
+                <div class="timer-bar-container">
+                    <div class="timer-bar" id="trial-timer-bar"></div>
+                </div>
+                <div class="timer-text" id="trial-timer-text">{{ challenge.time_limit }}s</div>
+
+                <div class="form-group">
+                    <label class="form-label" for="timer-answer-input">Type Fast, Sigma</label>
+                    <textarea 
+                        name="answer" 
+                        id="timer-answer-input" 
+                        class="form-textarea" 
+                        placeholder="Type the exact phrase here..." 
+                        autocomplete="off" 
+                        autocorrect="off" 
+                        autocapitalize="off" 
+                        spellcheck="false" 
+                        required
+                    ></textarea>
+                </div>
+
+            <!-- 3. Choice Challenge (Spot the Meme / Vibe Check) -->
+            {% elif challenge.input_type == 'choice' %}
+                <input type="hidden" name="correct_answer" value="{{ challenge.correct or '' }}">
+                <input type="hidden" name="challenge_context" value="{{ challenge.instruction }}">
+                <input type="hidden" name="answer" id="choice-selected-answer" value="" required>
+
+                <div class="choice-grid">
+                    {% for option in challenge.options %}
+                    <div class="choice-card" onclick="selectChoiceOption(this, '{{ option | escape }}')">
+                        {{ option }}
+                    </div>
+                    {% endfor %}
+                </div>
+
+            <!-- 4. Slider of Doom Challenge -->
+            {% elif challenge.input_type == 'slider' %}
+                <input type="hidden" name="target_value" value="{{ challenge.target }}">
+                <input type="hidden" name="challenge_context" value="Target: {{ challenge.target }}">
+                <input type="hidden" name="slider_value" id="doom-slider-val" value="50">
+                <input type="hidden" name="answer" id="doom-slider-ans" value="50">
+
+                <div class="slider-container">
+                    <div class="slider-target">TARGET: {{ challenge.target }}</div>
+                    <div class="slider-value" id="doom-display-val">50</div>
+                    <input 
+                        type="range" 
+                        min="0" 
+                        max="100" 
+                        value="50" 
+                        class="doom-slider" 
+                        id="doom-range-input"
+                    >
+                </div>
+            {% endif %}
+
+            <!-- Submit Button -->
+            <button type="submit" class="btn btn-primary btn-full" id="trial-submit-btn" style="margin-top: 1rem;">
+                SUBMIT TO THE BOUNCER 🎲
+            </button>
+        </form>
+    </div>
+</main>
+
+<!-- AI Analysis Overlay -->
+<div class="analysis-overlay" id="analysis-overlay">
+    <div class="analysis-spinner"></div>
+    <h2 class="analysis-title">AI ANALYSIS IN PROGRESS</h2>
+    <div id="analysis-steps-list" style="text-align: center; max-width: 450px;"></div>
+</div>
+
+<!-- Analysis steps payload -->
+<script id="analysis-steps-json" type="application/json">
+    {{ analysis_steps | tojson | safe }}
+</script>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    // Continue button if result card is present
+    const continueBtn = document.getElementById('continue-trial-btn');
+    if (continueBtn) {
+        continueBtn.addEventListener('click', function() {
+            const resCard = document.getElementById('result-card');
+            const chCard = document.getElementById('challenge-card');
+            if (resCard) resCard.style.display = 'none';
+            if (chCard) {
+                chCard.style.display = 'block';
+                chCard.scrollIntoView({ behavior: 'smooth' });
+                // If timer challenge, start timer upon continue
+                if (typeof window.startTrialTimer === 'function') {
+                    window.startTrialTimer();
+                }
+            }
+        });
+    }
+
+    // Choice card selection
+    function selectChoiceOption(element, value) {
+        document.querySelectorAll('.choice-card').forEach(card => card.classList.remove('selected'));
+        element.classList.add('selected');
+        const hiddenAnswer = document.getElementById('choice-selected-answer');
+        if (hiddenAnswer) hiddenAnswer.value = value;
+    }
+
+    // Slider jitter & updates
+    const doomRange = document.getElementById('doom-range-input');
+    if (doomRange) {
+        const doomDisplay = document.getElementById('doom-display-val');
+        const doomValInput = document.getElementById('doom-slider-val');
+        const doomAnsInput = document.getElementById('doom-slider-ans');
+
+        doomRange.addEventListener('input', function() {
+            let val = parseInt(this.value);
+            // Chaos jitter: 35% chance to slip by 1-3 points
+            if (Math.random() < 0.35) {
+                const shift = (Math.random() > 0.5 ? 1 : -1) * (Math.floor(Math.random() * 3) + 1);
+                val = Math.max(0, Math.min(100, val + shift));
+            }
+            if (doomDisplay) doomDisplay.textContent = val;
+            if (doomValInput) doomValInput.value = val;
+            if (doomAnsInput) doomAnsInput.value = val;
+        });
+    }
+
+    // Sigma Timer logic
+    {% if challenge.input_type == 'timer' %}
+    let timerStarted = false;
+    window.startTrialTimer = function() {
+        if (timerStarted) return;
+        timerStarted = true;
+
+        let timeLeft = {{ challenge.time_limit }};
+        const totalDuration = timeLeft;
+        const timerText = document.getElementById('trial-timer-text');
+        const timerBar = document.getElementById('trial-timer-bar');
+        const timedOutField = document.getElementById('timer-timed-out');
+        const form = document.getElementById('trial-form');
+
+        const timerInterval = setInterval(function() {
+            timeLeft--;
+            if (timerText) timerText.textContent = timeLeft + 's';
+            if (timerBar) {
+                const percent = Math.max(0, (timeLeft / totalDuration) * 100);
+                timerBar.style.width = percent + '%';
+                if (percent < 30) {
+                    timerBar.className = 'timer-bar danger';
+                } else if (percent < 60) {
+                    timerBar.className = 'timer-bar warning';
+                }
+            }
+
+            if (timeLeft <= 0) {
+                clearInterval(timerInterval);
+                if (timedOutField) timedOutField.value = 'true';
+                if (!window.trialSubmitting) {
+                    // Trigger auto submission
+                    triggerAiAnalysisOverlay(form);
+                }
+            }
+        }, 1000);
+    };
+
+    // If no last_result card is currently blocking, start timer immediately
+    {% if not last_result %}
+        window.startTrialTimer();
+    {% endif %}
+    {% endif %}
+
+    // AI Analysis Overlay Handler
+    window.trialSubmitting = false;
+    const trialForm = document.getElementById('trial-form');
+
+    function triggerAiAnalysisOverlay(formToSubmit) {
+        if (window.trialSubmitting) return;
+        window.trialSubmitting = true;
+
+        const overlay = document.getElementById('analysis-overlay');
+        const stepsContainer = document.getElementById('analysis-steps-list');
+
+        let steps = [];
+        try {
+            steps = JSON.parse(document.getElementById('analysis-steps-json').textContent);
+        } catch(e) {
+            steps = [
+                "Quantifying baseline sigma wavelength...",
+                "Running heuristic aura regression test...",
+                "Bouncer neural net calculating cringe quotient...",
+                "Finalizing Ohio risk assessment..."
+            ];
+        }
+
+        if (overlay) overlay.classList.add('active');
+        if (stepsContainer) {
+            stepsContainer.innerHTML = '';
+            let stepIndex = 0;
+            const interval = setInterval(function() {
+                if (stepIndex < steps.length && stepIndex < 3) {
+                    const stepEl = document.createElement('div');
+                    stepEl.className = 'analysis-step';
+                    stepEl.textContent = '⚡ ' + steps[stepIndex];
+                    stepsContainer.appendChild(stepEl);
+                    stepIndex++;
+                }
+            }, 600);
+
+            // Wait 2.4 seconds then submit
+            setTimeout(function() {
+                clearInterval(interval);
+                formToSubmit.submit();
+            }, 2400);
+        } else {
+            formToSubmit.submit();
+        }
+    }
+
+    if (trialForm) {
+        trialForm.addEventListener('submit', function(e) {
+            if (window.trialSubmitting) return;
+            e.preventDefault();
+
+            // Validate choice selection if applicable
+            {% if challenge.input_type == 'choice' %}
+            const choiceAnswer = document.getElementById('choice-selected-answer');
+            if (!choiceAnswer || !choiceAnswer.value.trim()) {
+                alert('Please pick an option to face The Bouncer!');
+                return;
+            }
+            {% endif %}
+
+            triggerAiAnalysisOverlay(this);
+        });
+    }
+</script>
+{% endblock %}

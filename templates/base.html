@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}AURA FARMERS ANONYMOUS{% endblock %}</title>
+
+    <!-- Google Fonts: Bangers, Comic Neue, Fredoka -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Bangers&family=Comic+Neue:wght@400;700&family=Fredoka:wght@400;600;700&display=swap" rel="stylesheet">
+
+    <!-- Stylesheet -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    {% block head %}{% endblock %}
+</head>
+<body data-chaos="3">
+    <!-- SPLASH SCREEN -->
+    <div class="splash-screen" id="splash-screen">
+        <h1>AURA FARMERS ANONYMOUS</h1>
+        <p>CLICK TO ENABLE CHAOS 🔊</p>
+    </div>
+    <script>
+        if (sessionStorage.getItem('splashDismissed') === 'true') {
+            const ss = document.getElementById('splash-screen');
+            if (ss) ss.style.display = 'none';
+        }
+    </script>
+
+    <!-- EMOJI RAIN container -->
+    <div id="emoji-rain"></div>
+
+    <!-- MUTE TOGGLE in top-right corner -->
+    <div class="mute-toggle" id="mute-toggle" title="Toggle Sound">🔊</div>
+
+    <!-- CHAOS LEVEL SLIDER -->
+    <div class="chaos-control">
+        <label for="chaos-slider">CHAOS</label>
+        <input type="range" id="chaos-slider" class="chaos-slider" min="1" max="5" value="3" title="Adjust Chaos Level">
+    </div>
+
+    <!-- Flash messages -->
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+        <div class="flash-container">
+          {% for category, message in messages %}
+            <div class="flash-message flash-{{ category }}">{{ message }}</div>
+          {% endfor %}
+        </div>
+      {% endif %}
+    {% endwith %}
+
+    <!-- Main Content block -->
+    {% block content %}{% endblock %}
+
+    <!-- FAKE COOKIE BANNER -->
+    <div class="cookie-banner" id="cookie-banner">
+        <div class="cookie-text">
+            <strong>⚠️ AURA NOTICE:</strong> This site uses cookies to track your aura levels.
+        </div>
+        <div class="cookie-buttons">
+            <button type="button" class="btn btn-primary btn-small" id="cookie-accept-btn">Accept all vibes</button>
+            <button type="button" class="btn btn-danger btn-small" id="cookie-reject-btn">Reject all rizz</button>
+            <button type="button" class="btn btn-purple btn-small" id="cookie-ohio-btn">Ask me in Ohio</button>
+        </div>
+    </div>
+
+    <!-- NOTIFICATION POPUP container -->
+    <div id="notification-container"></div>
+
+    <!-- MASCOT container -->
+    <div id="mascot-container"></div>
+
+    <!-- CONFETTI canvas -->
+    <canvas id="confetti-canvas"></canvas>
+
+    <!-- Global System Notifications Data (from context processor) -->
+    {% if notifications %}
+    <script id="system-notifications-data" type="application/json">
+        {{ notifications | tojson | safe }}
+    </script>
+    {% endif %}
+
+    <!-- Essential Base Handlers -->
+    <script>
+        // Splash screen removal & audio unlock
+        const splashScreenEl = document.getElementById('splash-screen');
+        if (splashScreenEl) {
+            if (sessionStorage.getItem('splashDismissed') === 'true') {
+                splashScreenEl.remove();
+                window.audioUnlocked = true;
+            } else {
+                splashScreenEl.addEventListener('click', function() {
+                    sessionStorage.setItem('splashDismissed', 'true');
+                    this.style.opacity = '0';
+                    this.style.transition = 'opacity 0.3s ease';
+                    setTimeout(() => this.remove(), 300);
+                    window.audioUnlocked = true;
+                    window.dispatchEvent(new CustomEvent('audioUnlocked'));
+                });
+            }
+        }
+
+        // Cookie banner dismissal
+        ['cookie-accept-btn', 'cookie-reject-btn', 'cookie-ohio-btn'].forEach(function(btnId) {
+            const btn = document.getElementById(btnId);
+            if (btn) {
+                btn.addEventListener('click', function() {
+                    const banner = document.getElementById('cookie-banner');
+                    if (banner) banner.classList.add('hidden');
+                });
+            }
+        });
+
+        // Chaos slider adjustment
+        const chaosSliderEl = document.getElementById('chaos-slider');
+        if (chaosSliderEl) {
+            chaosSliderEl.addEventListener('input', function() {
+                document.body.setAttribute('data-chaos', this.value);
+                window.dispatchEvent(new CustomEvent('chaosChanged', { detail: { level: parseInt(this.value) } }));
+            });
+        }
+
+        // Mute toggle
+        const muteToggleEl = document.getElementById('mute-toggle');
+        if (muteToggleEl) {
+            muteToggleEl.addEventListener('click', function() {
+                window.isMuted = !window.isMuted;
+                this.textContent = window.isMuted ? '🔇' : '🔊';
+                window.dispatchEvent(new CustomEvent('muteToggled', { detail: { muted: window.isMuted } }));
+            });
+        }
+    </script>
+
+    <!-- JS Files -->
+    <script src="{{ url_for('static', filename='js/sounds.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/confetti.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/challenges.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/mascot.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+
+    <!-- Page Specific Scripts -->
+    {% block scripts %}{% endblock %}
+</body>
+</html>

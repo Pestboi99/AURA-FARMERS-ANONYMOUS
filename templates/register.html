@@ -1,0 +1,164 @@
+{% extends "base.html" %}
+
+{% block title %}Create Account — AURA FARMERS ANONYMOUS{% endblock %}
+
+{% block content %}
+<main class="main-container">
+    <!-- Sticker Badges -->
+    <div style="margin-bottom: 0.5rem; text-align: center;">
+        <span class="sticker sticker-pink">NO NPCS ALLOWED</span>
+        <span class="sticker sticker-cyan">100% SIGMA VERIFIED</span>
+    </div>
+
+    <!-- Page Title & Subtitle -->
+    <h1 class="page-title glitch-text">📝 CREATE YOUR ACCOUNT</h1>
+    <p class="page-subtitle">Choose a username and a password that meets our EXTREMELY REASONABLE requirements</p>
+
+    <!-- Registration Form Card -->
+    <div class="card card-glow">
+        <form method="POST" action="{{ url_for('register') }}">
+            <!-- Username Field -->
+            <div class="form-group">
+                <label class="form-label" for="username-input">Sigma Username</label>
+                <input 
+                    type="text" 
+                    id="username-input" 
+                    name="username" 
+                    class="form-input" 
+                    value="{{ username or '' }}" 
+                    placeholder="e.g. OhioRizzler99" 
+                    required 
+                    minlength="3" 
+                    maxlength="30"
+                    autocomplete="username"
+                >
+            </div>
+
+            <!-- Password Field -->
+            <div class="form-group">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.3rem;">
+                    <label class="form-label" for="password-input" style="margin-bottom: 0;">Sigma Password</label>
+                    <button type="button" class="password-toggle-btn no-tung" data-target="password-input" style="padding: 0.2rem 0.6rem; font-size: 0.8rem;" title="Toggle Password Visibility">👁️ Show</button>
+                </div>
+                <input 
+                    type="password" 
+                    id="password-input" 
+                    name="password" 
+                    class="form-input" 
+                    placeholder="e.g. 🍎Sigma7prime!" 
+                    required 
+                    autocomplete="new-password"
+                >
+
+                <!-- Quick Emoji & Fruit Picker -->
+                <div class="emoji-picker-container">
+                    <span style="font-size: 0.75rem; color: var(--acid-yellow); font-family: var(--font-heading); display: block; margin-bottom: 0.3rem;">👇 CLICK TO INSERT EMOJI / FRUIT:</span>
+                    <div class="emoji-picker-bar" data-target="password-input">
+                        <button type="button" class="emoji-btn no-tung" data-emoji="🍎" title="Apple (Fruit + Emoji)">🍎</button>
+                        <button type="button" class="emoji-btn no-tung" data-emoji="🍌" title="Banana (Fruit + Emoji)">🍌</button>
+                        <button type="button" class="emoji-btn no-tung" data-emoji="🍒" title="Cherry (Fruit + Emoji)">🍒</button>
+                        <button type="button" class="emoji-btn no-tung" data-emoji="🍇" title="Grape (Fruit + Emoji)">🍇</button>
+                        <button type="button" class="emoji-btn no-tung" data-emoji="🍉" title="Watermelon (Fruit + Emoji)">🍉</button>
+                        <button type="button" class="emoji-btn no-tung" data-emoji="🎭" title="Drama Mask (Emoji)">🎭</button>
+                        <button type="button" class="emoji-btn no-tung" data-emoji="💀" title="Skull (Emoji)">💀</button>
+                        <button type="button" class="emoji-btn no-tung" data-emoji="🔥" title="Fire (Emoji)">🔥</button>
+                        <button type="button" class="emoji-btn no-tung" data-emoji="🗿" title="Mewing Moai (Emoji)">🗿</button>
+                        <button type="button" class="emoji-btn no-tung" data-emoji="👑" title="Crown (Emoji)">👑</button>
+                        <button type="button" class="emoji-btn no-tung" data-emoji="✨" title="Sparkles (Emoji)">✨</button>
+                        <button type="button" class="emoji-btn no-tung" data-emoji="🚽" title="Skibidi Toilet (Emoji)">🚽</button>
+                        <button type="button" class="emoji-btn no-tung" data-emoji="😈" title="Sigma Demon (Emoji)">😈</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Live Password Checklist -->
+            <div class="form-group">
+                <label class="form-label">Password Requirements (No Cap)</label>
+                <ul class="password-checklist" id="password-checklist">
+                    <li data-check="min_length" class="{% if checks %}{{ 'check-pass' if checks.min_length else 'check-fail' }}{% else %}check-fail{% endif %}">
+                        <span class="check-icon">{% if checks and checks.min_length %}✅{% else %}❌{% endif %}</span>
+                        <span>At least 8 characters</span>
+                    </li>
+                    <li data-check="has_prime" class="{% if checks %}{{ 'check-pass' if checks.has_prime else 'check-fail' }}{% else %}check-fail{% endif %}">
+                        <span class="check-icon">{% if checks and checks.has_prime %}✅{% else %}❌{% endif %}</span>
+                        <span>Contains a prime number (2,3,5,7,11...)</span>
+                    </li>
+                    <li data-check="has_emoji" class="{% if checks %}{{ 'check-pass' if checks.has_emoji else 'check-fail' }}{% else %}check-fail{% endif %}">
+                        <span class="check-icon">{% if checks and checks.has_emoji %}✅{% else %}❌{% endif %}</span>
+                        <span>Contains an emoji 🎭</span>
+                    </li>
+                    <li data-check="has_fruit" class="{% if checks %}{{ 'check-pass' if checks.has_fruit else 'check-fail' }}{% else %}check-fail{% endif %}">
+                        <span class="check-icon">{% if checks and checks.has_fruit %}✅{% else %}❌{% endif %}</span>
+                        <span>Contains a fruit name (apple, banana, etc.)</span>
+                    </li>
+                    <li data-check="has_sigma" class="{% if checks %}{{ 'check-pass' if checks.has_sigma else 'check-fail' }}{% else %}check-fail{% endif %}">
+                        <span class="check-icon">{% if checks and checks.has_sigma %}✅{% else %}❌{% endif %}</span>
+                        <span>Contains the word "sigma"</span>
+                    </li>
+                </ul>
+            </div>
+
+            <!-- Submit Button -->
+            <button type="submit" class="btn btn-primary btn-full">CREATE ACCOUNT 🚀</button>
+        </form>
+    </div>
+
+    <!-- Navigation Link -->
+    <div class="nav-links">
+        <a href="{{ url_for('login') }}">Already have an account? Try to survive the login →</a>
+    </div>
+</main>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const passwordInput = document.getElementById('password-input');
+        const checklist = document.getElementById('password-checklist');
+        let debounceTimer = null;
+
+        function updateChecklist(checks) {
+            if (!checks || !checklist) return;
+            for (const [rule, passed] of Object.entries(checks)) {
+                const item = checklist.querySelector(`[data-check="${rule}"]`);
+                if (item) {
+                    if (passed) {
+                        item.classList.remove('check-fail');
+                        item.classList.add('check-pass');
+                    } else {
+                        item.classList.remove('check-pass');
+                        item.classList.add('check-fail');
+                    }
+                    const icon = item.querySelector('.check-icon');
+                    if (icon) {
+                        icon.textContent = passed ? '✅' : '❌';
+                    }
+                }
+            }
+        }
+
+        if (passwordInput) {
+            passwordInput.addEventListener('input', function() {
+                clearTimeout(debounceTimer);
+                const passwordVal = this.value;
+                debounceTimer = setTimeout(function() {
+                    fetch('{{ url_for("validate_password_api") }}', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({ password: passwordVal })
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        updateChecklist(data);
+                    })
+                    .catch(err => {
+                        console.error('Password validation fetch failed:', err);
+                    });
+                }, 300);
+            });
+        }
+    });
+</script>
+{% endblock %}

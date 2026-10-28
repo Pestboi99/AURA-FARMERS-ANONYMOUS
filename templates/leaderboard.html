@@ -1,0 +1,126 @@
+{% extends "base.html" %}
+
+{% block title %}Leaderboard — AURA FARMERS ANONYMOUS{% endblock %}
+
+{% block content %}
+<main class="main-container wide-container">
+    <!-- Header -->
+    <h1 class="page-title glitch-text">🏆 LEADERBOARD</h1>
+    <p class="page-subtitle">The Hall of Fame and the Hall of Infinite Shame</p>
+
+    <!-- Two-column Leaderboard Grid -->
+    <div class="dashboard-grid">
+        <!-- 1. Most Humiliated Users (Hall of Shame) -->
+        <div class="card card-glow">
+            <h2 style="color: var(--neon-pink); font-family: var(--font-heading); font-size: 1.4rem; text-align: center; margin-bottom: 0.5rem;">
+                MOST HUMILIATED USERS 💀
+            </h2>
+            <p style="text-align: center; font-size: 0.8rem; color: var(--text-secondary); margin-bottom: 1rem;">
+                Ranked by catastrophic trial failures
+            </p>
+
+            {% if shame %}
+            <table class="leaderboard-table">
+                <thead>
+                    <tr>
+                        <th style="width: 15%;">Rank</th>
+                        <th style="width: 30%;">User</th>
+                        <th style="width: 20%;">Fails</th>
+                        <th style="width: 35%;">Worst Answer</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for user in shame %}
+                    <tr>
+                        <td>
+                            <span class="rank-number {% if loop.index == 1 %}rank-1{% elif loop.index == 2 %}rank-2{% elif loop.index == 3 %}rank-3{% endif %}">
+                                #{{ loop.index }}
+                            </span>
+                        </td>
+                        <td>
+                            <strong style="color: var(--text-primary);">{{ user.username }}</strong>
+                        </td>
+                        <td style="color: var(--danger); font-weight: 700;">
+                            {{ user.failed_attempts }}
+                        </td>
+                        <td>
+                            <span class="shame-answer" title="{{ user.worst_answer or 'Too ashamed to speak' }}">
+                                {{ user.worst_answer or '—' }}
+                            </span>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            {% else %}
+            <div class="empty-state">
+                <div class="empty-emoji">🦗</div>
+                <p>No humiliated users yet.</p>
+                <p style="font-size: 0.85rem;">Nobody has failed enough to earn eternal shame.</p>
+            </div>
+            {% endif %}
+        </div>
+
+        <!-- 2. Highest Aura (Sigma Hall of Fame) -->
+        <div class="card card-glow">
+            <h2 style="color: var(--acid-yellow); font-family: var(--font-heading); font-size: 1.4rem; text-align: center; margin-bottom: 0.5rem;">
+                HIGHEST AURA 👑
+            </h2>
+            <p style="text-align: center; font-size: 0.8rem; color: var(--text-secondary); margin-bottom: 1rem;">
+                Elite individuals who conquered the Bouncer
+            </p>
+
+            {% if aura_leaders %}
+            <table class="leaderboard-table">
+                <thead>
+                    <tr>
+                        <th style="width: 15%;">Rank</th>
+                        <th style="width: 35%;">User</th>
+                        <th style="width: 25%;">Aura</th>
+                        <th style="width: 25%;">Title</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for user in aura_leaders %}
+                    <tr>
+                        <td>
+                            <span class="rank-number {% if loop.index == 1 %}rank-1{% elif loop.index == 2 %}rank-2{% elif loop.index == 3 %}rank-3{% endif %}">
+                                #{{ loop.index }}
+                            </span>
+                        </td>
+                        <td>
+                            <strong style="color: var(--text-primary);">{{ user.username }}</strong>
+                        </td>
+                        <td style="color: var(--electric-cyan); font-family: var(--font-heading); font-size: 1.1rem;">
+                            {{ user.aura_points }}
+                        </td>
+                        <td>
+                            <span style="font-size: 0.8rem; color: var(--lime);">
+                                {{ user.rank_title }}
+                            </span>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            {% else %}
+            <div class="empty-state">
+                <div class="empty-emoji">🗿</div>
+                <p>No aura leaders found.</p>
+                <p style="font-size: 0.85rem;">The realm awaits its first true sigma.</p>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Navigation links -->
+    <div class="nav-links" style="margin-top: 2rem;">
+        {% if session.get('user_id') %}
+            <a href="{{ url_for('dashboard') }}">🏠 Back to Dashboard</a>
+        {% else %}
+            <a href="{{ url_for('login') }}">🚪 Back to Login</a>
+            <a href="{{ url_for('register') }}">📝 Create Account</a>
+        {% endif %}
+    </div>
+</main>
+{% endblock %}
