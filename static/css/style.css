@@ -2029,3 +2029,23 @@ a:hover { color: var(--neon-pink); }
     }
 }
 
+@keyframes captchaCheckboxShake {
+    0%, 100% { transform: translateX(0); }
+    20%, 60% { transform: translateX(-8px); }
+    40%, 80% { transform: translateX(8px); }
+}
+
+.captcha-checkbox-catchable {
+    animation: captchaCheckboxShake 0.4s ease;
+}
+
+.captcha-checkbox-checked {
+    border-color: var(--lime) !important;
+    background: rgba(125, 255, 0, 0.2) !important;
+}
+
+.captcha-checkbox-done {
+    transform: scale(1.05);
+    transition: transform 0.2s ease;
+}
+

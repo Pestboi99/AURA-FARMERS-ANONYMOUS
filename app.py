@@ -78,7 +78,8 @@ FRUITS = [
     'apple', 'banana', 'cherry', 'grape', 'lemon', 'lime', 'mango',
     'melon', 'orange', 'peach', 'pear', 'plum', 'kiwi', 'berry',
     'coconut', 'fig', 'papaya', 'guava', 'watermelon', 'strawberry',
-    'pineapple', 'avocado', 'dragonfruit', 'pomegranate',
+    'pineapple', 'avocado', 'dragonfruit', 'pomegranate', 'blueberry',
+    'raspberry', 'blackberry', 'apricot', 'tomato', 'citrus',
     '🍎', '🍏', '🍌', '🍒', '🍇', '🍋', '🍊', '🍉', '🍓', '🍑', '🍍', '🥝', '🥑', '🥥', '🥭', '🍐', '🍈'
 ]
 
@@ -100,18 +101,39 @@ def validate_password(password):
     Validate password against absurd rules.
     Returns (is_valid, checks_dict) where checks_dict shows each rule's status.
     """
+    if not password:
+        return False, {
+            'min_length': False,
+            'has_prime': False,
+            'has_emoji': False,
+            'has_fruit': False,
+            'has_sigma': False,
+        }
+
     import unicodedata
     has_emoji_char = bool(EMOJI_PATTERN.search(password)) or any(
         (ord(c) > 0x2300 and unicodedata.category(c) in ('So', 'Sk', 'Sm', 'Cn'))
         for c in password
     )
 
+    # Count length: allow 8 characters OR 8 bytes in UTF-8 (handling multi-byte emojis)
+    min_length_pass = len(password) >= 6 or len(password.encode('utf-8')) >= 8
+
+    # Prime check: any prime number or the word 'prime'
+    has_prime_pass = any(str(p) in password for p in PRIMES) or ('prime' in password.lower())
+
+    # Fruit check: any fruit name or fruit emoji
+    has_fruit_pass = any(fruit in password.lower() for fruit in FRUITS)
+
+    # Sigma check: case-insensitive
+    has_sigma_pass = 'sigma' in password.lower()
+
     checks = {
-        'min_length': len(password) >= 8,
-        'has_prime': any(str(p) in password for p in PRIMES),
+        'min_length': min_length_pass,
+        'has_prime': has_prime_pass,
         'has_emoji': has_emoji_char,
-        'has_fruit': any(fruit in password.lower() for fruit in FRUITS),
-        'has_sigma': 'sigma' in password.lower(),
+        'has_fruit': has_fruit_pass,
+        'has_sigma': has_sigma_pass,
     }
     is_valid = all(checks.values())
     return is_valid, checks
@@ -204,12 +226,12 @@ def generate_captcha_challenge(challenge_type):
         }
 
     elif challenge_type == 'mewing_timer':
-        target = random.choice([3.69, 4.20, 2.77, 5.55])
-        tolerance = 0.35
+        target = random.choice([3.00, 3.50, 4.00, 2.80])
+        tolerance = 0.70
         return {
             'type': 'mewing_timer',
             'title': '🗿 MEWING PRECISION TEST',
-            'instruction': f'Hold the MEW button for EXACTLY {target} seconds. Release too early or too late and your jawline suffers.',
+            'instruction': f'Hold the MEW button for {target} seconds (±{tolerance}s). Release when confident in your mewing posture!',
             'target_time': target,
             'tolerance': tolerance,
         }
@@ -404,7 +426,7 @@ def register():
         is_valid, checks = validate_password(password)
         if not is_valid:
             flash('Your password doesn\'t meet the SIGMA REQUIREMENTS. Try again, NPC.', 'error')
-            return render_template('register.html', checks=checks, username=username)
+            return render_template('register.html', checks=checks, username=username, password=password)
 
         # Store credentials and start captcha gauntlet
         session['pending_username'] = username
@@ -441,7 +463,7 @@ def register():
 @app.route('/validate-password', methods=['POST'])
 def validate_password_api():
     """API endpoint for live password validation."""
-    data = request.get_json()
+    data = request.get_json(silent=True) or {}
     password = data.get('password', '')
     _, checks = validate_password(password)
     return jsonify(checks)
@@ -453,7 +475,7 @@ def verify_captcha():
     if 'captcha_challenges' not in session:
         return jsonify({'error': 'No captcha session active'}), 400
 
-    data = request.get_json()
+    data = request.get_json(silent=True) or {}
     challenge_type = data.get('type', '')
     answer = data.get('answer')
 
@@ -484,68 +506,69 @@ def verify_captcha():
     if challenge_type == 'npc_grid':
         selected = set(answer) if isinstance(answer, list) else set()
         correct = set(current.get('correct_indices', []))
-        passed = selected == correct
+        correct_selected = selected & correct
+        extra_selected = selected - correct
+        passed = (selected == correct) or (len(correct_selected) >= 2 and len(extra_selected) <= 1)
         if passed:
             message = 'Sigma energy correctly identified!'
         else:
             missed = correct - selected
-            extra = selected - correct
-            if missed and extra:
-                message = f'You missed {len(missed)} sigma(s) AND clicked {len(extra)} NPC(s). Embarrassing.'
+            if missed and extra_selected:
+                message = f'You missed {len(missed)} sigma(s) and selected {len(extra_selected)} NPC(s).'
             elif missed:
-                message = f'You missed {len(missed)} sigma square(s). Your detection skills need mewing.'
+                message = f'You missed {len(missed)} sigma square(s). Almost had it!'
             else:
-                message = f'You clicked {len(extra)} NPC square(s) thinking they were sigma. Couldn\'t be more wrong.'
+                message = f'You clicked {len(extra_selected)} NPC square(s).'
 
     elif challenge_type == 'runaway_checkbox':
-        # Client-side verified — if they managed to click it, they pass
         click_count = data.get('click_count', 0)
-        passed = answer == True
+        passed = bool(answer)
         if passed:
-            if click_count > 10:
-                message = f'It took you {click_count} attempts to click a checkbox. But you got it.'
+            if click_count > 3:
+                message = f'You cornered and caught it! Excellent sigma reflexes.'
             else:
-                message = 'You caught it! Impressive reflexes for a potential NPC.'
+                message = 'You caught it on the first try! Superhuman speed.'
         else:
-            message = 'You couldn\'t even click a checkbox. Peak NPC behavior.'
+            message = 'Checkbox was not checked. Try clicking it again!'
 
     elif challenge_type == 'mewing_timer':
         try:
             held_time = float(answer)
-            target = current.get('target_time', 3.69)
-            tolerance = current.get('tolerance', 0.35)
+            target = float(current.get('target_time', 3.00))
+            tolerance = float(current.get('tolerance', 0.70))
             diff = abs(held_time - target)
             passed = diff <= tolerance
             if passed:
-                message = f'You held for {held_time:.2f}s (target: {target}s). Your mewing precision is elite.'
+                message = f'Held for {held_time:.2f}s (target: {target}s ±{tolerance}s). Flawless jawline precision.'
             else:
                 if held_time < target:
-                    message = f'You held for {held_time:.2f}s but needed {target}s. Premature un-mewing detected.'
+                    message = f'Held for {held_time:.2f}s, needed {target}s (±{tolerance}s). A bit too early!'
                 else:
-                    message = f'You held for {held_time:.2f}s but needed {target}s. Over-mewing is also a crime.'
+                    message = f'Held for {held_time:.2f}s, needed {target}s (±{tolerance}s). Held a bit too long!'
         except (ValueError, TypeError):
-            message = 'Invalid mewing data. Did you even try?'
+            message = 'Invalid mewing data.'
 
     elif challenge_type == 'brainrot_math':
         try:
-            user_answer = int(answer)
+            user_answer = int(str(answer).strip())
             correct_answer = current.get('answer', 0)
             passed = user_answer == correct_answer
             if passed:
-                message = f'Correct! {correct_answer} is right. Your brainrot mathematics degree is valid.'
+                message = f'Correct! {correct_answer} is right. Brainrot math certified.'
             else:
-                message = f'You said {user_answer}. The answer was {correct_answer}. Your aura calculator is broken.'
+                message = f'You entered {user_answer}. The answer was {correct_answer}.'
         except (ValueError, TypeError):
-            message = 'That\'s not even a number. The sigma council is disappointed.'
+            message = 'Please enter a valid number.'
 
     elif challenge_type == 'rizz_unscramble':
         correct_answer = current.get('answer', '').lower().strip()
-        user_answer = str(answer).lower().strip()
-        passed = user_answer == correct_answer
+        user_clean = re.sub(r'[^a-z0-9]', '', str(answer).lower())
+        correct_clean = re.sub(r'[^a-z0-9]', '', str(correct_answer).lower())
+        passed = (user_clean == correct_clean) or (correct_clean in user_clean)
         if passed:
-            message = f'Correct! "{correct_answer}" — your brainrot vocabulary is extensive.'
+            message = f'Correct! "{correct_answer}" — brainrot literacy 100/100.'
         else:
-            message = f'You typed "{answer}". It was "{correct_answer}". Your rizz literacy needs work.'
+            message = f'You typed "{answer}". The answer was "{correct_answer}".'
 
     roast = random.choice(CAPTCHA_ROASTS_PASS if passed else CAPTCHA_ROASTS_FAIL)
 
@@ -568,15 +591,15 @@ def verify_captcha():
 
     if all_done:
         total_passed = session.get('captcha_passed', 0)
-        if total_passed >= 2:  # Need at least 2/3
+        # Pass if passed at least 1 or 2
+        if total_passed >= 1:
             session['captcha_completed'] = True
             captcha_success = True
         else:
-            # Failed the gauntlet — reset everything
-            for key in ['captcha_challenges', 'captcha_index', 'captcha_passed',
-                        'captcha_failed', 'captcha_completed', 'current_captcha',
-                        'pending_username', 'pending_password_hash']:
-                session.pop(key, None)
+            # Keep credentials so they can easily retry
+            session['captcha_index'] = 0
+            session['captcha_passed'] = 0
+            session['captcha_failed'] = 0
     else:
         # Generate next challenge
         next_challenge = generate_captcha_challenge(challenges[next_idx])
