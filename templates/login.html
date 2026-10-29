@@ -43,10 +43,41 @@
                     id="login-password" 
                     name="password" 
                     class="form-input" 
-                    placeholder="Enter your password" 
+                    placeholder="Enter your password (e.g. 🍎Sigma7prime!)" 
                     required 
                     autocomplete="current-password"
                 >
+
+                <!-- Quick Emoji Picker -->
+                <div class="emoji-picker-container" style="margin-top: 0.6rem;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.3rem;">
+                        <span style="font-size: 0.75rem; color: var(--acid-yellow); font-family: var(--font-heading);">👇 CLICK TO INSERT EMOJI (<span id="emoji-target-label">INTO PASSWORD</span>):</span>
+                        <button type="button" class="btn btn-small btn-secondary no-tung" id="toggle-target-btn" style="padding: 0.15rem 0.5rem; font-size: 0.7rem; letter-spacing: 0;">Switch to Username</button>
+                    </div>
+                    <div class="emoji-picker-bar" id="login-emoji-bar" data-target="login-password" style="display: flex; flex-wrap: wrap; gap: 4px;">
+                        <button type="button" class="emoji-btn no-tung" data-emoji="🍎" title="Apple (Fruit + Emoji)">🍎</button>
+                        <button type="button" class="emoji-btn no-tung" data-emoji="🍌" title="Banana (Fruit + Emoji)">🍌</button>
+                        <button type="button" class="emoji-btn no-tung" data-emoji="🍒" title="Cherry (Fruit + Emoji)">🍒</button>
+                        <button type="button" class="emoji-btn no-tung" data-emoji="🍇" title="Grape (Fruit + Emoji)">🍇</button>
+                        <button type="button" class="emoji-btn no-tung" data-emoji="🍉" title="Watermelon (Fruit + Emoji)">🍉</button>
+                        <button type="button" class="emoji-btn no-tung" data-emoji="🗿" title="Mewing Moai">🗿</button>
+                        <button type="button" class="emoji-btn no-tung" data-emoji="💀" title="Skull">💀</button>
+                        <button type="button" class="emoji-btn no-tung" data-emoji="🔥" title="Fire">🔥</button>
+                        <button type="button" class="emoji-btn no-tung" data-emoji="👑" title="Crown">👑</button>
+                        <button type="button" class="emoji-btn no-tung" data-emoji="🚽" title="Skibidi Toilet">🚽</button>
+                        <button type="button" class="emoji-btn no-tung" data-emoji="💅" title="Nail Polish">💅</button>
+                        <button type="button" class="emoji-btn no-tung" data-emoji="✨" title="Sparkles">✨</button>
+                        <button type="button" class="emoji-btn no-tung" data-emoji="7" title="Prime Number 7" style="font-family: var(--font-heading); font-weight: bold; background: var(--grape-purple); color: #fff;">7️⃣</button>
+                        <button type="button" class="emoji-btn no-tung" data-emoji="3" title="Prime Number 3" style="font-family: var(--font-heading); font-weight: bold; background: var(--grape-purple); color: #fff;">3️⃣</button>
+                    </div>
+                </div>
+
+                <!-- One-Click Auto-Fill Demo Credentials -->
+                <div style="display: flex; gap: 0.5rem; margin-top: 0.4rem; margin-bottom: 0.8rem;">
+                    <button type="button" class="btn btn-warning btn-small no-tung" id="demo-autofill-btn" style="flex: 1; padding: 0.35rem 0.6rem; font-size: 0.82rem; text-transform: none; letter-spacing: 0.5px;">
+                        ✨ Fill Demo Credentials (demo / 🍎Sigma7prime!)
+                    </button>
+                </div>
             </div>
 
             <!-- Submit Button -->
@@ -136,6 +167,62 @@
                 dodge(e);
             }, 150);
         });
+
+        // ─────────────────────────────────────────────
+        // Emoji Picker & Autofill Logic for Login
+        // ─────────────────────────────────────────────
+        const usernameInput = document.getElementById('login-username');
+        const passwordInput = document.getElementById('login-password');
+        const emojiBar = document.getElementById('login-emoji-bar');
+        const emojiTargetLabel = document.getElementById('emoji-target-label');
+        const toggleTargetBtn = document.getElementById('toggle-target-btn');
+        const demoAutofillBtn = document.getElementById('demo-autofill-btn');
+
+        function setEmojiTarget(target) {
+            if (!emojiBar || !emojiTargetLabel) return;
+            if (target === 'username') {
+                emojiBar.dataset.target = 'login-username';
+                emojiTargetLabel.textContent = 'INTO USERNAME';
+                if (toggleTargetBtn) toggleTargetBtn.textContent = 'Switch to Password';
+            } else {
+                emojiBar.dataset.target = 'login-password';
+                emojiTargetLabel.textContent = 'INTO PASSWORD';
+                if (toggleTargetBtn) toggleTargetBtn.textContent = 'Switch to Username';
+            }
+        }
+
+        if (usernameInput) {
+            usernameInput.addEventListener('focus', function() {
+                setEmojiTarget('username');
+            });
+        }
+
+        if (passwordInput) {
+            passwordInput.addEventListener('focus', function() {
+                setEmojiTarget('password');
+            });
+        }
+
+        if (toggleTargetBtn) {
+            toggleTargetBtn.addEventListener('click', function() {
+                const current = (emojiBar && emojiBar.dataset.target === 'login-username') ? 'username' : 'password';
+                setEmojiTarget(current === 'username' ? 'password' : 'username');
+                const targetInput = emojiBar.dataset.target === 'login-username' ? usernameInput : passwordInput;
+                if (targetInput) targetInput.focus();
+            });
+        }
+
+        if (demoAutofillBtn && usernameInput && passwordInput) {
+            demoAutofillBtn.addEventListener('click', function() {
+                usernameInput.value = 'demo';
+                passwordInput.value = '🍎Sigma7prime!';
+                usernameInput.dispatchEvent(new Event('input', { bubbles: true }));
+                passwordInput.dispatchEvent(new Event('input', { bubbles: true }));
+                if (window.AuraSound && typeof window.AuraSound.playTung === 'function') {
+                    window.AuraSound.playTung();
+                }
+            });
+        }
     });
 </script>
 {% endblock %}
