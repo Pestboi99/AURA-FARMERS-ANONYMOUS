@@ -10,7 +10,10 @@
         <span class="sticker sticker-cyan">100% SIGMA VERIFIED</span>
     </div>
 
-    <!-- Page Title & Subtitle -->
+    {% if not captcha_mode %}
+    <!-- ═══════════════════════════════════════════ -->
+    <!-- PHASE 1: SIGMA REGISTRATION FORM           -->
+    <!-- ═══════════════════════════════════════════ -->
     <h1 class="page-title glitch-text">📝 CREATE YOUR ACCOUNT</h1>
     <p class="page-subtitle">Choose a username and a password that meets our EXTREMELY REASONABLE requirements</p>
 
@@ -99,9 +102,84 @@
             </div>
 
             <!-- Submit Button -->
-            <button type="submit" class="btn btn-primary btn-full">CREATE ACCOUNT 🚀</button>
+            <button type="submit" class="btn btn-primary btn-full">PROCEED TO CAPTCHA GAUNTLET 🛡️</button>
         </form>
     </div>
+
+    {% else %}
+    <!-- ═══════════════════════════════════════════ -->
+    <!-- PHASE 2: BRAINROT CAPTCHA GAUNTLET          -->
+    <!-- ═══════════════════════════════════════════ -->
+    <h1 class="page-title glitch-text" id="captcha-main-title">🛡️ CAPTCHA GAUNTLET</h1>
+    <p class="page-subtitle" id="captcha-subtitle">Prove you're not an NPC. Survive 3 challenges to create your account.</p>
+
+    <!-- Progress Bar -->
+    <div class="captcha-progress" id="captcha-progress">
+        <div class="captcha-progress-dots">
+            {% for i in range(captcha_total) %}
+            <div class="captcha-dot {% if i < captcha_index %}done{% elif i == captcha_index %}active{% endif %}" id="captcha-dot-{{ i }}">
+                <span class="captcha-dot-num">{{ i + 1 }}</span>
+            </div>
+            {% if i < captcha_total - 1 %}
+            <div class="captcha-dot-line {% if i < captcha_index %}done{% endif %}" id="captcha-line-{{ i }}"></div>
+            {% endif %}
+            {% endfor %}
+        </div>
+        <div class="captcha-score" id="captcha-score">
+            <span class="captcha-score-pass" id="score-pass">✅ 0</span>
+            <span class="captcha-score-fail" id="score-fail">❌ 0</span>
+        </div>
+    </div>
+
+    <!-- Challenge Container -->
+    <div class="card card-glow captcha-card" id="captcha-container">
+        <!-- Challenge Header -->
+        <div class="captcha-header" id="captcha-header">
+            <h2 class="captcha-title" id="captcha-title">{{ captcha.title }}</h2>
+            <p class="captcha-instruction" id="captcha-instruction">{{ captcha.instruction }}</p>
+        </div>
+
+        <!-- Challenge Content (rendered by JS) -->
+        <div class="captcha-content" id="captcha-content">
+            <!-- Initial challenge rendered by JS on load -->
+        </div>
+
+        <!-- Submit Button -->
+        <button type="button" class="btn btn-secondary btn-full captcha-submit-btn" id="captcha-submit-btn">
+            VERIFY 🔍
+        </button>
+    </div>
+
+    <!-- Result Overlay (shown after each challenge) -->
+    <div class="captcha-result-overlay" id="captcha-result-overlay" style="display: none;">
+        <div class="captcha-result-card" id="captcha-result-card">
+            <div class="captcha-result-icon" id="captcha-result-icon">🗿</div>
+            <h3 class="captcha-result-verdict" id="captcha-result-verdict">PASSED</h3>
+            <p class="captcha-result-message" id="captcha-result-message"></p>
+            <p class="captcha-result-roast" id="captcha-result-roast"></p>
+            <button type="button" class="btn btn-primary" id="captcha-next-btn">NEXT CHALLENGE →</button>
+        </div>
+    </div>
+
+    <!-- Final Result (shown when all challenges done) -->
+    <div class="captcha-final-overlay" id="captcha-final-overlay" style="display: none;">
+        <div class="captcha-final-card" id="captcha-final-card">
+            <div class="captcha-final-icon" id="captcha-final-icon">🏆</div>
+            <h2 class="captcha-final-title" id="captcha-final-title">GAUNTLET COMPLETE</h2>
+            <p class="captcha-final-message" id="captcha-final-message"></p>
+            <form method="POST" action="{{ url_for('register') }}" id="captcha-final-form" style="display:none;">
+                <input type="hidden" name="username" value="{{ username }}">
+                <input type="hidden" name="password" value="">
+            </form>
+            <button type="button" class="btn btn-success btn-full" id="captcha-final-btn">CREATE MY SIGMA ACCOUNT 🚀</button>
+        </div>
+    </div>
+
+    <!-- Initial captcha data passed from server -->
+    <script id="captcha-init-data" type="application/json">
+        {{ captcha | tojson | safe }}
+    </script>
+    {% endif %}
 
     <!-- Navigation Link -->
     <div class="nav-links">
@@ -113,6 +191,9 @@
 {% block scripts %}
 <script>
     document.addEventListener('DOMContentLoaded', function() {
+        // ──────────────────────────────────────
+        // Password validation (Phase 1)
+        // ──────────────────────────────────────
         const passwordInput = document.getElementById('password-input');
         const checklist = document.getElementById('password-checklist');
         let debounceTimer = null;
@@ -159,6 +240,513 @@
                 }, 300);
             });
         }
+
+        // ──────────────────────────────────────
+        // Captcha Gauntlet (Phase 2)
+        // ──────────────────────────────────────
+        const captchaDataEl = document.getElementById('captcha-init-data');
+        if (!captchaDataEl) return; // Not in captcha mode
+
+        let currentCaptcha = JSON.parse(captchaDataEl.textContent);
+        let captchaState = {
+            selectedGridItems: new Set(),
+            checkboxClicked: false,
+            checkboxClickCount: 0,
+            mewStartTime: null,
+            mewHeldTime: null,
+            mewingActive: false,
+        };
+
+        const captchaContent = document.getElementById('captcha-content');
+        const captchaTitle = document.getElementById('captcha-title');
+        const captchaInstruction = document.getElementById('captcha-instruction');
+        const submitBtn = document.getElementById('captcha-submit-btn');
+        const resultOverlay = document.getElementById('captcha-result-overlay');
+        const resultIcon = document.getElementById('captcha-result-icon');
+        const resultVerdict = document.getElementById('captcha-result-verdict');
+        const resultMessage = document.getElementById('captcha-result-message');
+        const resultRoast = document.getElementById('captcha-result-roast');
+        const nextBtn = document.getElementById('captcha-next-btn');
+        const finalOverlay = document.getElementById('captcha-final-overlay');
+        const finalIcon = document.getElementById('captcha-final-icon');
+        const finalTitle = document.getElementById('captcha-final-title');
+        const finalMessage = document.getElementById('captcha-final-message');
+        const finalBtn = document.getElementById('captcha-final-btn');
+        const scorePassed = document.getElementById('score-pass');
+        const scoreFailed = document.getElementById('score-fail');
+
+        // Render a challenge
+        function renderCaptcha(captcha) {
+            currentCaptcha = captcha;
+            captchaTitle.textContent = captcha.title;
+            captchaInstruction.textContent = captcha.instruction;
+            captchaContent.innerHTML = '';
+            captchaState = {
+                selectedGridItems: new Set(),
+                checkboxClicked: false,
+                checkboxClickCount: 0,
+                mewStartTime: null,
+                mewHeldTime: null,
+                mewingActive: false,
+            };
+            submitBtn.style.display = 'flex';
+
+            if (captcha.type === 'npc_grid') {
+                renderNpcGrid(captcha);
+            } else if (captcha.type === 'runaway_checkbox') {
+                renderRunawayCheckbox(captcha);
+            } else if (captcha.type === 'mewing_timer') {
+                renderMewingTimer(captcha);
+            } else if (captcha.type === 'brainrot_math') {
+                renderBrainrotMath(captcha);
+            } else if (captcha.type === 'rizz_unscramble') {
+                renderRizzUnscramble(captcha);
+            }
+
+            // Animate in
+            captchaContent.classList.add('captcha-animate-in');
+            setTimeout(() => captchaContent.classList.remove('captcha-animate-in'), 500);
+        }
+
+        // ── NPC GRID ──
+        function renderNpcGrid(captcha) {
+            const grid = document.createElement('div');
+            grid.className = 'captcha-npc-grid';
+
+            captcha.grid.forEach((item, idx) => {
+                const cell = document.createElement('div');
+                cell.className = 'captcha-grid-cell';
+                cell.dataset.index = idx;
+                cell.innerHTML = `
+                    <span class="captcha-grid-emoji">${item.emoji}</span>
+                    <span class="captcha-grid-label">${item.label}</span>
+                    <div class="captcha-grid-check">✓</div>
+                `;
+                cell.addEventListener('click', () => {
+                    cell.classList.toggle('selected');
+                    if (captchaState.selectedGridItems.has(idx)) {
+                        captchaState.selectedGridItems.delete(idx);
+                    } else {
+                        captchaState.selectedGridItems.add(idx);
+                    }
+                });
+                grid.appendChild(cell);
+            });
+
+            captchaContent.appendChild(grid);
+        }
+
+        // ── RUNAWAY CHECKBOX ──
+        function renderRunawayCheckbox(captcha) {
+            const container = document.createElement('div');
+            container.className = 'captcha-runaway-zone';
+            container.id = 'runaway-zone';
+
+            const checkboxWrapper = document.createElement('div');
+            checkboxWrapper.className = 'captcha-runaway-wrapper';
+            checkboxWrapper.id = 'runaway-wrapper';
+
+            const fakeCheckbox = document.createElement('div');
+            fakeCheckbox.className = 'captcha-fake-checkbox';
+            fakeCheckbox.id = 'runaway-checkbox';
+            fakeCheckbox.innerHTML = `
+                <span class="captcha-checkbox-box" id="checkbox-box">☐</span>
+                <span class="captcha-checkbox-text">I am not an NPC</span>
+            `;
+
+            let runCount = 0;
+            const maxRuns = 8 + Math.floor(Math.random() * 8); // 8-15 runs before catchable
+            let caught = false;
+
+            // Make checkbox run away on hover
+            checkboxWrapper.addEventListener('mouseenter', function(e) {
+                if (caught) return;
+                runCount++;
+                captchaState.checkboxClickCount = runCount;
+                
+                if (runCount >= maxRuns) {
+                    // Finally catchable — slow down
+                    caught = true;
+                    checkboxWrapper.style.transition = 'all 0.5s ease';
+                    checkboxWrapper.querySelector('.captcha-checkbox-text').textContent = 'Fine... click me 😮‍💨';
+                    checkboxWrapper.classList.add('captcha-checkbox-catchable');
+                    return;
+                }
+
+                // Run away!
+                const zone = container.getBoundingClientRect();
+                const maxX = zone.width - 200;
+                const maxY = zone.height - 50;
+                const newX = Math.random() * maxX;
+                const newY = Math.random() * maxY;
+                checkboxWrapper.style.transform = `translate(${newX}px, ${newY}px) rotate(${(Math.random() - 0.5) * 30}deg)`;
+                
+                // Taunt messages
+                const taunts = [
+                    'I am not an NPC', 'Too slow, NPC! 😂', 'Can\\'t catch me!', 
+                    'Your mouse has no rizz', 'Skill issue fr fr', 'Bro is struggling 💀',
+                    'You\\'re down bad rn', 'The checkbox has more aura than you',
+                    'Maybe try mewing first?', 'L + ratio + no checkbox',
+                    'Not even close bestie', 'The sigma eludes you',
+                    'Your reflexes are NPC-tier', 'Bruh. 🗿'
+                ];
+                checkboxWrapper.querySelector('.captcha-checkbox-text').textContent = 
+                    taunts[Math.min(runCount, taunts.length - 1)];
+            });
+
+            fakeCheckbox.addEventListener('click', function() {
+                if (!caught && runCount < maxRuns) return;
+                captchaState.checkboxClicked = true;
+                fakeCheckbox.querySelector('.captcha-checkbox-box').textContent = '☑';
+                fakeCheckbox.classList.add('captcha-checkbox-checked');
+                checkboxWrapper.querySelector('.captcha-checkbox-text').textContent = 'Verified (barely) ✅';
+                checkboxWrapper.classList.add('captcha-checkbox-done');
+            });
+
+            // Touch support
+            container.addEventListener('touchstart', function(e) {
+                if (caught) return;
+                runCount++;
+                captchaState.checkboxClickCount = runCount;
+                if (runCount >= maxRuns) {
+                    caught = true;
+                    checkboxWrapper.style.transition = 'all 0.5s ease';
+                    checkboxWrapper.querySelector('.captcha-checkbox-text').textContent = 'Fine... tap me 😮‍💨';
+                    checkboxWrapper.classList.add('captcha-checkbox-catchable');
+                    return;
+                }
+                const zone = container.getBoundingClientRect();
+                const maxX = zone.width - 200;
+                const maxY = zone.height - 50;
+                const newX = Math.random() * maxX;
+                const newY = Math.random() * maxY;
+                checkboxWrapper.style.transform = `translate(${newX}px, ${newY}px)`;
+            });
+
+            checkboxWrapper.appendChild(fakeCheckbox);
+            container.appendChild(checkboxWrapper);
+
+            // Add attempt counter
+            const counter = document.createElement('div');
+            counter.className = 'captcha-attempt-counter';
+            counter.id = 'attempt-counter';
+            counter.textContent = 'Attempts: 0';
+            container.appendChild(counter);
+
+            // Update counter
+            const counterInterval = setInterval(() => {
+                const el = document.getElementById('attempt-counter');
+                if (el) el.textContent = `Attempts: ${captchaState.checkboxClickCount}`;
+                else clearInterval(counterInterval);
+            }, 100);
+
+            captchaContent.appendChild(container);
+        }
+
+        // ── MEWING TIMER ──
+        function renderMewingTimer(captcha) {
+            const container = document.createElement('div');
+            container.className = 'captcha-mewing-container';
+
+            const targetDisplay = document.createElement('div');
+            targetDisplay.className = 'captcha-mewing-target';
+            targetDisplay.innerHTML = `Hold for <span class="captcha-mewing-target-time">${captcha.target_time}s</span>`;
+
+            const timerDisplay = document.createElement('div');
+            timerDisplay.className = 'captcha-mewing-timer-display';
+            timerDisplay.id = 'mewing-timer-display';
+            timerDisplay.textContent = '0.00s';
+
+            const moai = document.createElement('div');
+            moai.className = 'captcha-mewing-moai';
+            moai.id = 'mewing-moai';
+            moai.textContent = '🗿';
+
+            const mewBtn = document.createElement('button');
+            mewBtn.type = 'button';
+            mewBtn.className = 'btn btn-warning captcha-mew-btn';
+            mewBtn.id = 'mew-button';
+            mewBtn.textContent = 'HOLD TO MEW 🗿';
+
+            let mewInterval = null;
+
+            function startMewing() {
+                if (captchaState.mewHeldTime !== null) return; // Already completed
+                captchaState.mewStartTime = performance.now();
+                captchaState.mewingActive = true;
+                mewBtn.classList.add('mewing-active');
+                moai.classList.add('mewing-active');
+
+                mewInterval = setInterval(() => {
+                    if (captchaState.mewStartTime) {
+                        const elapsed = (performance.now() - captchaState.mewStartTime) / 1000;
+                        timerDisplay.textContent = elapsed.toFixed(2) + 's';
+                        
+                        // Color feedback
+                        const diff = Math.abs(elapsed - captcha.target_time);
+                        if (diff < captcha.tolerance) {
+                            timerDisplay.style.color = 'var(--success)';
+                        } else if (elapsed > captcha.target_time + captcha.tolerance) {
+                            timerDisplay.style.color = 'var(--danger)';
+                        } else {
+                            timerDisplay.style.color = 'var(--acid-yellow)';
+                        }
+                    }
+                }, 16);
+            }
+
+            function stopMewing() {
+                if (!captchaState.mewingActive) return;
+                captchaState.mewingActive = false;
+                clearInterval(mewInterval);
+                const elapsed = (performance.now() - captchaState.mewStartTime) / 1000;
+                captchaState.mewHeldTime = elapsed;
+                timerDisplay.textContent = elapsed.toFixed(2) + 's';
+                mewBtn.classList.remove('mewing-active');
+                moai.classList.remove('mewing-active');
+                mewBtn.textContent = `RELEASED AT ${elapsed.toFixed(2)}s`;
+                mewBtn.disabled = true;
+
+                const diff = Math.abs(elapsed - captcha.target_time);
+                if (diff <= captcha.tolerance) {
+                    timerDisplay.style.color = 'var(--success)';
+                    moai.textContent = '🗿✨';
+                } else {
+                    timerDisplay.style.color = 'var(--danger)';
+                    moai.textContent = '💀';
+                }
+            }
+
+            mewBtn.addEventListener('mousedown', startMewing);
+            mewBtn.addEventListener('mouseup', stopMewing);
+            mewBtn.addEventListener('mouseleave', stopMewing);
+            mewBtn.addEventListener('touchstart', (e) => { e.preventDefault(); startMewing(); });
+            mewBtn.addEventListener('touchend', (e) => { e.preventDefault(); stopMewing(); });
+
+            const hint = document.createElement('div');
+            hint.className = 'captcha-mewing-hint';
+            hint.textContent = `Tolerance: ±${captcha.tolerance}s — No pressure 😏`;
+
+            container.appendChild(targetDisplay);
+            container.appendChild(moai);
+            container.appendChild(timerDisplay);
+            container.appendChild(mewBtn);
+            container.appendChild(hint);
+            captchaContent.appendChild(container);
+        }
+
+        // ── BRAINROT MATH ──
+        function renderBrainrotMath(captcha) {
+            const container = document.createElement('div');
+            container.className = 'captcha-math-container';
+
+            const questionBox = document.createElement('div');
+            questionBox.className = 'captcha-math-question';
+            questionBox.textContent = captcha.instruction;
+
+            const inputGroup = document.createElement('div');
+            inputGroup.className = 'captcha-math-input-group';
+
+            const input = document.createElement('input');
+            input.type = 'number';
+            input.className = 'form-input captcha-math-input';
+            input.id = 'math-answer-input';
+            input.placeholder = 'Enter the answer...';
+            input.autocomplete = 'off';
+
+            const calculator = document.createElement('div');
+            calculator.className = 'captcha-math-calculator';
+            calculator.innerHTML = `
+                <span class="captcha-math-emoji">🧮</span>
+                <span class="captcha-math-label">Brainrot Calculator™</span>
+            `;
+
+            inputGroup.appendChild(input);
+            container.appendChild(questionBox);
+            container.appendChild(inputGroup);
+            container.appendChild(calculator);
+            captchaContent.appendChild(container);
+        }
+
+        // ── RIZZ UNSCRAMBLE ──
+        function renderRizzUnscramble(captcha) {
+            const container = document.createElement('div');
+            container.className = 'captcha-rizz-container';
+
+            const scrambledDisplay = document.createElement('div');
+            scrambledDisplay.className = 'captcha-rizz-scrambled';
+            
+            // Animate each letter
+            const letters = captcha.scrambled.split('');
+            letters.forEach((letter, i) => {
+                const span = document.createElement('span');
+                span.className = 'captcha-rizz-letter';
+                span.textContent = letter;
+                span.style.animationDelay = `${i * 0.05}s`;
+                scrambledDisplay.appendChild(span);
+            });
+
+            const inputGroup = document.createElement('div');
+            inputGroup.className = 'captcha-rizz-input-group';
+
+            const input = document.createElement('input');
+            input.type = 'text';
+            input.className = 'form-input captcha-rizz-input';
+            input.id = 'rizz-answer-input';
+            input.placeholder = 'Unscramble the phrase...';
+            input.autocomplete = 'off';
+
+            const hint = document.createElement('div');
+            hint.className = 'captcha-rizz-hint';
+            hint.textContent = '💡 Hint: It\'s a well-known brainrot term. Think skibidi.';
+
+            inputGroup.appendChild(input);
+            container.appendChild(scrambledDisplay);
+            container.appendChild(inputGroup);
+            container.appendChild(hint);
+            captchaContent.appendChild(container);
+        }
+
+        // ── GET ANSWER ──
+        function getCaptchaAnswer() {
+            const type = currentCaptcha.type;
+            if (type === 'npc_grid') {
+                return Array.from(captchaState.selectedGridItems);
+            } else if (type === 'runaway_checkbox') {
+                return captchaState.checkboxClicked;
+            } else if (type === 'mewing_timer') {
+                return captchaState.mewHeldTime || 0;
+            } else if (type === 'brainrot_math') {
+                const input = document.getElementById('math-answer-input');
+                return input ? input.value : '';
+            } else if (type === 'rizz_unscramble') {
+                const input = document.getElementById('rizz-answer-input');
+                return input ? input.value : '';
+            }
+            return null;
+        }
+
+        // ── SUBMIT ──
+        submitBtn.addEventListener('click', function() {
+            const answer = getCaptchaAnswer();
+            submitBtn.disabled = true;
+            submitBtn.textContent = 'ANALYZING YOUR SIGMA LEVELS... 🔬';
+
+            // Dramatic delay
+            setTimeout(() => {
+                fetch('/captcha/verify', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        type: currentCaptcha.type,
+                        answer: answer,
+                        click_count: captchaState.checkboxClickCount,
+                    })
+                })
+                .then(r => r.json())
+                .then(data => {
+                    showResult(data);
+                })
+                .catch(err => {
+                    console.error('Captcha verify failed:', err);
+                    submitBtn.disabled = false;
+                    submitBtn.textContent = 'VERIFY 🔍';
+                });
+            }, 800 + Math.random() * 1200); // 0.8-2s dramatic pause
+        });
+
+        // ── SHOW RESULT ──
+        function showResult(data) {
+            // Update score
+            scorePassed.textContent = '✅ ' + data.progress.passed;
+            scoreFailed.textContent = '❌ ' + data.progress.failed;
+
+            // Update dots
+            const dotIdx = data.progress.current - 1;
+            const dot = document.getElementById(`captcha-dot-${dotIdx}`);
+            if (dot) {
+                dot.classList.remove('active');
+                dot.classList.add('done');
+                dot.classList.add(data.passed ? 'passed' : 'failed');
+            }
+            const line = document.getElementById(`captcha-line-${dotIdx}`);
+            if (line) line.classList.add('done');
+            const nextDot = document.getElementById(`captcha-dot-${data.progress.current}`);
+            if (nextDot) nextDot.classList.add('active');
+
+            if (data.all_done) {
+                // Show final result
+                showFinalResult(data);
+            } else {
+                // Show intermediate result
+                resultIcon.textContent = data.passed ? '✅' : '❌';
+                resultVerdict.textContent = data.passed ? 'PASSED' : 'FAILED';
+                resultVerdict.style.color = data.passed ? 'var(--success)' : 'var(--danger)';
+                resultMessage.textContent = data.message;
+                resultRoast.textContent = data.roast;
+                resultOverlay.style.display = 'flex';
+                resultOverlay.classList.add('captcha-overlay-animate');
+
+                // Store next captcha
+                window._nextCaptcha = data.next_captcha;
+            }
+        }
+
+        // ── NEXT CHALLENGE ──
+        nextBtn.addEventListener('click', function() {
+            resultOverlay.style.display = 'none';
+            resultOverlay.classList.remove('captcha-overlay-animate');
+            
+            if (window._nextCaptcha) {
+                renderCaptcha(window._nextCaptcha);
+                submitBtn.disabled = false;
+                submitBtn.textContent = 'VERIFY 🔍';
+            }
+        });
+
+        // ── FINAL RESULT ──
+        function showFinalResult(data) {
+            resultOverlay.style.display = 'none';
+            
+            if (data.captcha_success) {
+                finalIcon.textContent = '🏆';
+                finalTitle.textContent = 'GAUNTLET SURVIVED!';
+                finalTitle.style.color = 'var(--success)';
+                finalMessage.innerHTML = `
+                    <span style="color: var(--success); font-size: 1.2rem;">
+                        You passed ${data.progress.passed}/${data.progress.total} challenges!<br>
+                        The Sigma Council recognizes you as... not entirely an NPC.
+                    </span>
+                `;
+                finalBtn.textContent = 'CREATE MY SIGMA ACCOUNT 🚀';
+                finalBtn.className = 'btn btn-success btn-full';
+                finalBtn.onclick = function() {
+                    // Submit the registration form
+                    document.getElementById('captcha-final-form').submit();
+                };
+            } else {
+                finalIcon.textContent = '💀';
+                finalTitle.textContent = 'GAUNTLET FAILED';
+                finalTitle.style.color = 'var(--danger)';
+                finalMessage.innerHTML = `
+                    <span style="color: var(--danger); font-size: 1.2rem;">
+                        You only passed ${data.progress.passed}/${data.progress.total}. Minimum 2 required.<br>
+                        The Sigma Council has denied your application. Try again, NPC.
+                    </span>
+                `;
+                finalBtn.textContent = 'TRY AGAIN (with shame) 😭';
+                finalBtn.className = 'btn btn-danger btn-full';
+                finalBtn.onclick = function() {
+                    window.location.href = '{{ url_for("register") }}';
+                };
+            }
+
+            finalOverlay.style.display = 'flex';
+            finalOverlay.classList.add('captcha-overlay-animate');
+        }
+
+        // ── INITIAL RENDER ──
+        renderCaptcha(currentCaptcha);
     });
 </script>
 {% endblock %}

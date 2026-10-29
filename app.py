@@ -118,6 +118,123 @@ def validate_password(password):
 
 
 # ──────────────────────────────────────────────
+# Brainrot Captcha System
+# ──────────────────────────────────────────────
+BRAINROT_CAPTCHA_CHALLENGES = [
+    'npc_grid',        # Select all squares with sigma energy
+    'runaway_checkbox', # Checkbox that runs from cursor
+    'mewing_timer',    # Hold button for exactly 3.69s
+    'brainrot_math',   # Solve math in brainrot units
+    'rizz_unscramble', # Unscramble a brainrot phrase
+]
+
+NPC_GRID_ITEMS = [
+    # (emoji, label, is_sigma)
+    ('🗿', 'Mewing Stone', True),
+    ('👑', 'Sigma Crown', True),
+    ('🐺', 'Lone Wolf', True),
+    ('💎', 'Grindset Gem', True),
+    ('🏋️', 'Gym Gains', True),
+    ('😈', 'Demon Mode', True),
+    ('🔥', 'Sigma Flame', True),
+    ('⚡', 'Rizz Lightning', True),
+    ('🤡', 'NPC Clown', False),
+    ('🐑', 'Sheep Follower', False),
+    ('😴', 'Sleepy Beta', False),
+    ('📱', 'Doomscroller', False),
+    ('🍕', 'Pizza NPC', False),
+    ('🪑', 'Sitting Andy', False),
+    ('🧸', 'Teddy Beta', False),
+    ('🐌', 'Slow Grinder', False),
+    ('🎮', 'Gamer NPC', False),
+    ('🍿', 'Watcher NPC', False),
+    ('💤', 'Lazy Beta', False),
+    ('🤖', 'Literal NPC', False),
+]
+
+BRAINROT_MATH_PROBLEMS = [
+    {'question': 'If 1 skibidi = 3 aura points, and 1 fanum tax = 2 skibidis, how many aura points is 2 fanum taxes?', 'answer': 12},
+    {'question': 'A sigma mews 7 times per hour. How many mews in a 3-hour grindset session?', 'answer': 21},
+    {'question': 'You start with 100 aura. Ohio steals 42. A mewing session restores 17. What\'s your aura?', 'answer': 75},
+    {'question': 'If rizzler has 5x more charisma than an NPC, and NPCs have 3 charisma, what\'s the rizzler\'s total?', 'answer': 15},
+    {'question': 'Tung Tung hits 4 bonks/sec. Sahur lasts 6 seconds. How many total bonks?', 'answer': 24},
+    {'question': 'A skibidi toilet recruits 2 toilets daily. Starting from 1, how many after 3 days? (including original)', 'answer': 8},
+    {'question': 'Sigma grindset: wake at 3AM, sleep at 11PM. How many hours of grind?', 'answer': 20},
+    {'question': 'If you lose 5 aura per L and gain 10 per W, after 3 Ws and 4 Ls, what\'s your net aura?', 'answer': 10},
+]
+
+RIZZ_PHRASES = [
+    {'scrambled': 'dibikis letoit', 'answer': 'skibidi toilet'},
+    {'scrambled': 'het zzirler', 'answer': 'the rizzler'},
+    {'scrambled': 'giams laem', 'answer': 'sigma male'},
+    {'scrambled': 'namuf xat', 'answer': 'fanum tax'},
+    {'scrambled': 'tung tung ruahs', 'answer': 'tung tung sahur'},
+    {'scrambled': 'ihoo nifal sobs', 'answer': 'ohio final boss'},
+    {'scrambled': 'gniwem chnqtieue', 'answer': 'mewing technique'},
+    {'scrambled': 'raua mfarres', 'answer': 'aura farmers'},
+]
+
+
+def generate_captcha_challenge(challenge_type):
+    """Generate a captcha challenge for registration."""
+    if challenge_type == 'npc_grid':
+        # Pick 9 items for a 3x3 grid, ensuring 2-4 are sigma
+        sigma_items = [i for i in NPC_GRID_ITEMS if i[2]]
+        npc_items = [i for i in NPC_GRID_ITEMS if not i[2]]
+        n_sigma = random.randint(2, 4)
+        n_npc = 9 - n_sigma
+        chosen_sigma = random.sample(sigma_items, min(n_sigma, len(sigma_items)))
+        chosen_npc = random.sample(npc_items, min(n_npc, len(npc_items)))
+        grid = chosen_sigma + chosen_npc
+        random.shuffle(grid)
+        correct_indices = [i for i, item in enumerate(grid) if item[2]]
+        return {
+            'type': 'npc_grid',
+            'title': '🗿 SELECT ALL SIGMA ENERGY',
+            'instruction': 'Select ALL squares that contain SIGMA energy. Miss one and you\'re an NPC.',
+            'grid': [{'emoji': item[0], 'label': item[1], 'index': i} for i, item in enumerate(grid)],
+            'correct_indices': correct_indices,
+        }
+
+    elif challenge_type == 'runaway_checkbox':
+        return {
+            'type': 'runaway_checkbox',
+            'title': '☑️ PROVE YOU\'RE NOT AN NPC',
+            'instruction': 'Click the checkbox. It might not want to be clicked though... 😈',
+        }
+
+    elif challenge_type == 'mewing_timer':
+        target = random.choice([3.69, 4.20, 2.77, 5.55])
+        tolerance = 0.35
+        return {
+            'type': 'mewing_timer',
+            'title': '🗿 MEWING PRECISION TEST',
+            'instruction': f'Hold the MEW button for EXACTLY {target} seconds. Release too early or too late and your jawline suffers.',
+            'target_time': target,
+            'tolerance': tolerance,
+        }
+
+    elif challenge_type == 'brainrot_math':
+        problem = random.choice(BRAINROT_MATH_PROBLEMS)
+        return {
+            'type': 'brainrot_math',
+            'title': '🧮 BRAINROT MATHEMATICS',
+            'instruction': problem['question'],
+            'answer': problem['answer'],
+        }
+
+    elif challenge_type == 'rizz_unscramble':
+        phrase = random.choice(RIZZ_PHRASES)
+        return {
+            'type': 'rizz_unscramble',
+            'title': '🔀 UNSCRAMBLE THE RIZZ',
+            'instruction': f'Unscramble this brainrot phrase:',
+            'scrambled': phrase['scrambled'],
+            'answer': phrase['answer'],
+        }
+
+
+# ──────────────────────────────────────────────
 # Challenge Definitions
 # ──────────────────────────────────────────────
 MEME_PROMPTS = [
@@ -254,10 +371,27 @@ def index():
 
 @app.route('/register', methods=['GET', 'POST'])
 def register():
-    """Registration page with absurd password rules."""
+    """Registration page with absurd password rules and brainrot captcha."""
     if request.method == 'POST':
         username = request.form.get('username', '').strip()
         password = request.form.get('password', '')
+
+        # If captcha was already completed, skip validation and create account
+        if session.get('captcha_completed'):
+            pending_username = session.pop('pending_username', username)
+            pending_hash = session.pop('pending_password_hash', generate_password_hash(password))
+            # Clean up all captcha state
+            for key in ['captcha_completed', 'captcha_challenges', 'captcha_index',
+                        'captcha_passed', 'captcha_failed', 'current_captcha']:
+                session.pop(key, None)
+
+            user = create_user(pending_username, pending_hash)
+            if user is None:
+                flash('That username is already taken by another sigma. Pick a new one.', 'error')
+                return render_template('register.html', username=pending_username)
+
+            flash('Account created! You survived the CAPTCHA GAUNTLET. Now survive the login... if you can. 💀', 'success')
+            return redirect(url_for('login'))
 
         if not username or len(username) < 3:
             flash('Username must be at least 3 characters. Even NPCs know this.', 'error')
@@ -272,14 +406,34 @@ def register():
             flash('Your password doesn\'t meet the SIGMA REQUIREMENTS. Try again, NPC.', 'error')
             return render_template('register.html', checks=checks, username=username)
 
-        password_hash = generate_password_hash(password)
-        user = create_user(username, password_hash)
-        if user is None:
-            flash('That username is already taken by another sigma. Pick a new one.', 'error')
-            return render_template('register.html', username=username)
+        # Store credentials and start captcha gauntlet
+        session['pending_username'] = username
+        session['pending_password_hash'] = generate_password_hash(password)
+        # Pick 3 random captcha challenges
+        captcha_challenges = random.sample(BRAINROT_CAPTCHA_CHALLENGES, 3)
+        session['captcha_challenges'] = captcha_challenges
+        session['captcha_index'] = 0
+        session['captcha_passed'] = 0
+        session['captcha_failed'] = 0
+        session['captcha_completed'] = False
 
-        flash('Account created! Now survive the login process... if you can. 💀', 'success')
-        return redirect(url_for('login'))
+        # Generate first challenge
+        challenge = generate_captcha_challenge(captcha_challenges[0])
+        session['current_captcha'] = challenge
+
+        return render_template('register.html',
+                               captcha_mode=True,
+                               captcha=challenge,
+                               captcha_index=0,
+                               captcha_total=3,
+                               username=username)
+
+
+    # Clean up any stale captcha state on fresh GET
+    for key in ['captcha_challenges', 'captcha_index', 'captcha_passed',
+                'captcha_failed', 'captcha_completed', 'current_captcha',
+                'pending_username', 'pending_password_hash']:
+        session.pop(key, None)
 
     return render_template('register.html')
 
@@ -291,6 +445,158 @@ def validate_password_api():
     password = data.get('password', '')
     _, checks = validate_password(password)
     return jsonify(checks)
+
+
+@app.route('/captcha/verify', methods=['POST'])
+def verify_captcha():
+    """API endpoint to verify a captcha challenge answer."""
+    if 'captcha_challenges' not in session:
+        return jsonify({'error': 'No captcha session active'}), 400
+
+    data = request.get_json()
+    challenge_type = data.get('type', '')
+    answer = data.get('answer')
+
+    current = session.get('current_captcha', {})
+    passed = False
+    message = ''
+    roast = ''
+
+    CAPTCHA_ROASTS_PASS = [
+        'Acceptable. Your sigma energy is... detectable.',
+        'The council acknowledges your existence. Barely.',
+        'You passed, but don\'t let it go to your head, NPC.',
+        'Huh. Didn\'t expect that from someone with your aura.',
+        'The mewing moai nods approvingly. 🗿',
+        'Certified non-NPC behavior. For now.',
+    ]
+
+    CAPTCHA_ROASTS_FAIL = [
+        'WRONG. Your brainrot levels are disappointingly low.',
+        'An NPC would\'ve gotten that right. You\'re BELOW NPC.',
+        'The sigma council has noted your failure. -1000 aura.',
+        'Tung Tung Tung Sahur bonks you for that answer. 💀',
+        'Even the skibidi toilets are laughing at you rn.',
+        'Your rizz just went into negative territory fr fr.',
+        'Ohio called. They don\'t even want you there.',
+    ]
+
+    if challenge_type == 'npc_grid':
+        selected = set(answer) if isinstance(answer, list) else set()
+        correct = set(current.get('correct_indices', []))
+        passed = selected == correct
+        if passed:
+            message = 'Sigma energy correctly identified!'
+        else:
+            missed = correct - selected
+            extra = selected - correct
+            if missed and extra:
+                message = f'You missed {len(missed)} sigma(s) AND clicked {len(extra)} NPC(s). Embarrassing.'
+            elif missed:
+                message = f'You missed {len(missed)} sigma square(s). Your detection skills need mewing.'
+            else:
+                message = f'You clicked {len(extra)} NPC square(s) thinking they were sigma. Couldn\'t be more wrong.'
+
+    elif challenge_type == 'runaway_checkbox':
+        # Client-side verified — if they managed to click it, they pass
+        click_count = data.get('click_count', 0)
+        passed = answer == True
+        if passed:
+            if click_count > 10:
+                message = f'It took you {click_count} attempts to click a checkbox. But you got it.'
+            else:
+                message = 'You caught it! Impressive reflexes for a potential NPC.'
+        else:
+            message = 'You couldn\'t even click a checkbox. Peak NPC behavior.'
+
+    elif challenge_type == 'mewing_timer':
+        try:
+            held_time = float(answer)
+            target = current.get('target_time', 3.69)
+            tolerance = current.get('tolerance', 0.35)
+            diff = abs(held_time - target)
+            passed = diff <= tolerance
+            if passed:
+                message = f'You held for {held_time:.2f}s (target: {target}s). Your mewing precision is elite.'
+            else:
+                if held_time < target:
+                    message = f'You held for {held_time:.2f}s but needed {target}s. Premature un-mewing detected.'
+                else:
+                    message = f'You held for {held_time:.2f}s but needed {target}s. Over-mewing is also a crime.'
+        except (ValueError, TypeError):
+            message = 'Invalid mewing data. Did you even try?'
+
+    elif challenge_type == 'brainrot_math':
+        try:
+            user_answer = int(answer)
+            correct_answer = current.get('answer', 0)
+            passed = user_answer == correct_answer
+            if passed:
+                message = f'Correct! {correct_answer} is right. Your brainrot mathematics degree is valid.'
+            else:
+                message = f'You said {user_answer}. The answer was {correct_answer}. Your aura calculator is broken.'
+        except (ValueError, TypeError):
+            message = 'That\'s not even a number. The sigma council is disappointed.'
+
+    elif challenge_type == 'rizz_unscramble':
+        correct_answer = current.get('answer', '').lower().strip()
+        user_answer = str(answer).lower().strip()
+        passed = user_answer == correct_answer
+        if passed:
+            message = f'Correct! "{correct_answer}" — your brainrot vocabulary is extensive.'
+        else:
+            message = f'You typed "{answer}". It was "{correct_answer}". Your rizz literacy needs work.'
+
+    roast = random.choice(CAPTCHA_ROASTS_PASS if passed else CAPTCHA_ROASTS_FAIL)
+
+    # Update session state
+    idx = session.get('captcha_index', 0)
+    challenges = session.get('captcha_challenges', [])
+
+    if passed:
+        session['captcha_passed'] = session.get('captcha_passed', 0) + 1
+    else:
+        session['captcha_failed'] = session.get('captcha_failed', 0) + 1
+
+    next_idx = idx + 1
+    session['captcha_index'] = next_idx
+
+    # Check if all challenges are done
+    all_done = next_idx >= len(challenges)
+    captcha_success = False
+    next_captcha = None
+
+    if all_done:
+        total_passed = session.get('captcha_passed', 0)
+        if total_passed >= 2:  # Need at least 2/3
+            session['captcha_completed'] = True
+            captcha_success = True
+        else:
+            # Failed the gauntlet — reset everything
+            for key in ['captcha_challenges', 'captcha_index', 'captcha_passed',
+                        'captcha_failed', 'captcha_completed', 'current_captcha',
+                        'pending_username', 'pending_password_hash']:
+                session.pop(key, None)
+    else:
+        # Generate next challenge
+        next_challenge = generate_captcha_challenge(challenges[next_idx])
+        session['current_captcha'] = next_challenge
+        next_captcha = next_challenge
+
+    return jsonify({
+        'passed': passed,
+        'message': message,
+        'roast': roast,
+        'all_done': all_done,
+        'captcha_success': captcha_success,
+        'next_captcha': next_captcha,
+        'progress': {
+            'current': next_idx,
+            'total': len(challenges),
+            'passed': session.get('captcha_passed', 0),
+            'failed': session.get('captcha_failed', 0),
+        }
+    })
 
 
 @app.route('/login', methods=['GET', 'POST'])
