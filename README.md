@@ -1,10 +1,24 @@
-# 🔥 AURA FARMERS ANONYMOUS 🔥
+# 🔥 Aura Farmers Anonymus Login System 🔥
 
 > **"We spent 2 years of engineering effort to make logging in 40x slower, with AI nobody asked for."**
 
 *Log in. Lose your dignity.*
 
 A satirical login system where logging in is deliberately the most absurd, over-engineered, AI-judged experience ever made. Built for the "Brainrot Engineering / Artificial Super Unintelligence / The Ultimate Inconvenience" hackathon track.
+
+---
+
+### 🔗 Project Links
+- **Live Demo**: [https://aura-farmers-anonymous.onrender.com](https://aura-farmers-anonymous.onrender.com)
+- **GitHub Repository**: [https://github.com/Pestboi99/AURA-FARMERS-ANONYMOUS](https://github.com/Pestboi99/AURA-FARMERS-ANONYMOUS)
+
+---
+
+## 👥 Team Members
+- **Harshit Srivastava**
+- **Shikhar Saini**
+- **Muhammad Sahil**
+- **Mohammed Taha Hakim**
 
 ## ✨ Features
 
